@@ -7,7 +7,7 @@
             "command": "/usr/bin/bash",
             "args": [
                 "-lc",
-                "mkdir -p \"${workspaceFolder}/build\" && /usr/bin/g++ -std=c++17 -g -O0 \"${workspaceFolder}/main.cpp\" -I\"${workspaceFolder}/SDL3-3.4.4/include\" -L\"${workspaceFolder}/SDL3-3.4.4/build\" -Wl,-rpath,\"${workspaceFolder}/SDL3-3.4.4/build\" -lSDL3 -o \"${workspaceFolder}/build/game\""
+                "mkdir -p \"${workspaceFolder}/build\" && /usr/bin/g++ -std=c++17 -g -O0 \"${workspaceFolder}/scr/main.cpp\" -I\"${workspaceFolder}/SDL3-3.4.4/include\" -L\"${workspaceFolder}/SDL3-3.4.4/build\" -Wl,-rpath,\"${workspaceFolder}/SDL3-3.4.4/build\" -lSDL3 -o \"${workspaceFolder}/build/game\""
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
