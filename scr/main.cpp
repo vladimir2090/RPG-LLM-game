@@ -161,8 +161,6 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 100, 30, 200, 255);
-
     if (moveUp) {
         rect.y -= speedRect;
     }
@@ -178,13 +176,16 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     SDL_RenderFillRect(renderer, &rect);
 
+    SDL_Texture* player = IMG_LoadTexture(renderer, "");
+    SDL_RenderTexture(renderer, player, NULL, &rect);
+
     SDL_RenderPresent(renderer);
-/*
+
     //учитываем время логики и рендера, чтобы не спать лишние 16 мс каждый кадр
     Uint64 frameTime = SDL_GetTicks() - frameStart;
     if (frameTime < frameDelayMs) {
         SDL_Delay(static_cast<Uint32>(frameDelayMs - frameTime));
-    }*/
+    }
 
     return SDL_APP_CONTINUE;
 }
