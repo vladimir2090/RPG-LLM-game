@@ -6,13 +6,69 @@
 //надо будет поменять в будущем для более точных классов
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
-bool turnRect = false;
-float speedRect = 1;
+
+bool moveUp = false;
+bool moveDown = false;
+bool moveLeft = false;
+bool moveRight = false;
+float speedRect = 10;
 const Uint64 frameDelayMs = 16;
 
-static bool IsMoveLeftKey(SDL_Keycode key) //смотреть ~44 строчку
+enum MoveAction
 {
-    return key == SDLK_A || key == 0x0444 || key == 0x0424;  // A, Cyrillic 'ф'/'Ф'
+    MoveNone,
+    MoveUp,
+    MoveDown,
+    MoveLeft,
+    MoveRight
+};
+
+static MoveAction GetMoveActionFromKey(SDL_Keycode key)
+{
+    switch (key) {
+        case SDLK_W:
+        case 0x0446:  // Cyrillic 'ц'
+        case 0x0426:  // Cyrillic 'Ц'
+            return MoveUp;
+
+        case SDLK_S:
+        case 0x044b:  // Cyrillic 'ы'
+        case 0x042b:  // Cyrillic 'Ы'
+            return MoveDown;
+
+        case SDLK_A:
+        case 0x0444:  // Cyrillic 'ф'
+        case 0x0424:  // Cyrillic 'Ф'
+            return MoveLeft;
+
+        case SDLK_D:
+        case 0x0432:  // Cyrillic 'в'
+        case 0x0412:  // Cyrillic 'В'
+            return MoveRight;
+
+        default:
+            return MoveNone;
+    }
+}
+
+static void SetMoveState(MoveAction action, bool pressed)
+{
+    switch (action) {
+        case MoveUp:
+            moveUp = pressed;
+            break;
+        case MoveDown:
+            moveDown = pressed;
+            break;
+        case MoveLeft:
+            moveLeft = pressed;
+            break;
+        case MoveRight:
+            moveRight = pressed;
+            break;
+        default:
+            break;
+    }
 }
 
 //расшифровка кнопок мышки
@@ -64,19 +120,19 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
     switch (event->type) {
         case SDL_EVENT_QUIT:
             return SDL_APP_SUCCESS;
-
-        /*
         case SDL_EVENT_KEY_DOWN:
-            std::cout << "key pressed: "
+        case SDL_EVENT_KEY_UP: {
+            bool pressed = event->type == SDL_EVENT_KEY_DOWN;
+            MoveAction action = GetMoveActionFromKey(event->key.key);
+
+            std::cout << (pressed ? "key pressed: " : "key released: ")
                       << SDL_GetKeyName(event->key.key)
                       << " code=" << event->key.key
                       << std::endl;
 
-            if (IsMoveLeftKey(event->key.key)) {
-                std::cout << "move left pressed" << std::endl;
-            }
+            SetMoveState(action, pressed);
             break;
-
+        }
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
             std::cout << "mouse pressed: "
                       << GetMouseButtonName(event->button.button)
@@ -86,7 +142,6 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
                       << " y=" << event->button.y
                       << std::endl;
             break;
-        */
 
         default:
             break;
@@ -106,32 +161,20 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     SDL_SetRenderDrawColor(renderer, 100, 30, 200, 255);
 
-    if (rect.x >= 1080 || rect.x < 100){
-        turnRect = !turnRect;
+    if (moveUp) {
+        rect.y -= speedRect;
     }
-    
-    rect.x = turnRect ? rect.x + speedRect : rect.x -speedRect;
-    
+    if (moveDown) {
+        rect.y += speedRect;
+    }
+    if (moveLeft) {
+        rect.x -= speedRect;
+    }
+    if (moveRight) {
+        rect.x += speedRect;
+    }
+
     SDL_RenderFillRect(renderer, &rect);
-    /*
-    SDL_FRect rectBorder;
-    rectBorder.x = 300;
-    rectBorder.y = 100;
-    rectBorder.w = 100;
-    rectBorder.h = 100;
-    SDL_RenderRect(renderer, &rectBorder);
-
-    // разные линии
-    SDL_RenderLine(renderer, 400, 100, 500, 150);
-
-    SDL_FPoint lines[] = {
-        {100, 250}, {200, 350}, {300, 400}, {350, 450}
-    };
-    SDL_RenderLines(renderer, lines, SDL_arraysize(lines));
-
-    //точка
-    SDL_RenderPoint(renderer, 50, 50);
-    */
 
     SDL_RenderPresent(renderer);
 
