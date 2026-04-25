@@ -16,6 +16,9 @@ bool moveDown = false;
 bool moveLeft = false;
 bool moveRight = false;
 
+//объекты глобальные
+SDL_FRect rect = {130, 190, 100, 100};
+
 enum MoveAction
 {
     MoveNone,
@@ -91,9 +94,6 @@ static const char *GetMouseButtonName(Uint8 button)
             return "unknown";
     }
 }
-
-//объекты глобальные
-SDL_FRect rect = {100, 100, 100, 100};
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
@@ -176,7 +176,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     SDL_RenderFillRect(renderer, &rect);
 
-    SDL_Texture* player = IMG_LoadTexture(renderer, "");
+    SDL_Texture* player = IMG_LoadTexture(renderer, "/home/vladimir/dev/game/assets/custom/knight-main.png");
     SDL_RenderTexture(renderer, player, NULL, &rect);
 
     SDL_RenderPresent(renderer);
