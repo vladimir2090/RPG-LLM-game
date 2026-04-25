@@ -7,7 +7,7 @@
             "command": "/usr/bin/bash",
             "args": [
                 "-lc",
-                "mkdir -p \"${workspaceFolder}/build\" && /usr/bin/g++ -std=c++17 -g -O0 \"${workspaceFolder}/scr/main.cpp\" -I\"${workspaceFolder}/SDL3-3.4.4/include\" -L\"${workspaceFolder}/SDL3-3.4.4/build\" -Wl,-rpath,\"${workspaceFolder}/SDL3-3.4.4/build\" -lSDL3 -o \"${workspaceFolder}/build/game\""
+                "cmake -S \"${workspaceFolder}\" -B \"${workspaceFolder}/build\" && cmake --build \"${workspaceFolder}/build\" -j"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -19,7 +19,7 @@
             "problemMatcher": [
                 "$gcc"
             ],
-            "detail": "Build the game from main.cpp and link against the locally built SDL3"
+            "detail": "Configure and build the game with CMake"
         },
         {
             "label": "run game",
@@ -27,7 +27,7 @@
             "command": "/usr/bin/bash",
             "args": [
                 "-lc",
-                "LD_LIBRARY_PATH=\"${workspaceFolder}/SDL3-3.4.4/build${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\" \"${workspaceFolder}/build/game\""
+                "LD_LIBRARY_PATH=\"${workspaceFolder}/SDL3-3.4.4/build:${workspaceFolder}/SDL_image/build${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\" \"${workspaceFolder}/build/game\""
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

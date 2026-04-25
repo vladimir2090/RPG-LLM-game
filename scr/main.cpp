@@ -1,18 +1,20 @@
 #define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3_image/SDL_image.h>
 #include <iostream>
 
 //надо будет поменять в будущем для более точных классов
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 
+float speedRect = 10;
+const Uint64 frameDelayMs = 16;
+//выглядит страшно, но единственное что придумал это через bool привязать действия и сделать case для смены значения bool 
 bool moveUp = false;
 bool moveDown = false;
 bool moveLeft = false;
 bool moveRight = false;
-float speedRect = 10;
-const Uint64 frameDelayMs = 16;
 
 enum MoveAction
 {
@@ -177,12 +179,12 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     SDL_RenderFillRect(renderer, &rect);
 
     SDL_RenderPresent(renderer);
-
+/*
     //учитываем время логики и рендера, чтобы не спать лишние 16 мс каждый кадр
     Uint64 frameTime = SDL_GetTicks() - frameStart;
     if (frameTime < frameDelayMs) {
         SDL_Delay(static_cast<Uint32>(frameDelayMs - frameTime));
-    }
+    }*/
 
     return SDL_APP_CONTINUE;
 }

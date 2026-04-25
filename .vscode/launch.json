@@ -12,7 +12,7 @@
             "environment": [
                 {
                     "name": "LD_LIBRARY_PATH",
-                    "value": "${workspaceFolder}/SDL3-3.4.4/build"
+                    "value": "${workspaceFolder}/SDL3-3.4.4/build:${workspaceFolder}/SDL_image/build"
                 }
             ],
             "externalConsole": false,
