@@ -7,9 +7,11 @@
 //надо будет поменять в будущем для более точных классов
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
+static SDL_Texture *player = NULL;
 
-float speedRect = 10;
-const Uint64 frameDelayMs = 16;
+float speedRect = 600.0f;
+const Uint64 targetFps = 60;
+const Uint64 targetFrameNs = 1000000000 / targetFps;
 //выглядит страшно, но единственное что придумал это через bool привязать действия и сделать case для смены значения bool 
 bool moveUp = false;
 bool moveDown = false;
@@ -17,7 +19,7 @@ bool moveLeft = false;
 bool moveRight = false;
 
 //объекты глобальные
-SDL_FRect rect = {130, 190, 100, 100};
+SDL_FRect rect = {100, 100, 130, 190};
 
 enum MoveAction
 {
@@ -112,6 +114,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
+    player = IMG_LoadTexture(renderer, "/home/vladimir/dev/game/assets/custom/knight-main.png");
+    if (player == NULL) {
+        SDL_Log("IMG_LoadTexture failed: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
+
     return SDL_APP_CONTINUE;
 }
 
@@ -135,6 +143,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
             SetMoveState(action, pressed);
             break;
         }
+        
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
             std::cout << "mouse pressed: "
                       << GetMouseButtonName(event->button.button)
@@ -156,35 +165,47 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 {
     (void)appstate;
 
-    Uint64 frameStart = SDL_GetTicks();
+    static Uint64 lastFrameNs = 0;
+    Uint64 frameStartNs = SDL_GetTicksNS();
+    if (lastFrameNs == 0) {
+        lastFrameNs = frameStartNs;
+    }
+
+    float deltaTime = (frameStartNs - lastFrameNs) / 1000000000.0f;
+    lastFrameNs = frameStartNs;
+
+    if (deltaTime > 0.05f) {
+        deltaTime = 0.05f;
+    }
+
+    float rectStep = speedRect * deltaTime;
 
     SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255);
     SDL_RenderClear(renderer);
 
     if (moveUp) {
-        rect.y -= speedRect;
+        rect.y -= rectStep;
     }
     if (moveDown) {
-        rect.y += speedRect;
+        rect.y += rectStep;
     }
     if (moveLeft) {
-        rect.x -= speedRect;
+        rect.x -= rectStep;
     }
     if (moveRight) {
-        rect.x += speedRect;
+        rect.x += rectStep;
     }
 
     SDL_RenderFillRect(renderer, &rect);
 
-    SDL_Texture* player = IMG_LoadTexture(renderer, "/home/vladimir/dev/game/assets/custom/knight-main.png");
     SDL_RenderTexture(renderer, player, NULL, &rect);
 
     SDL_RenderPresent(renderer);
 
-    //учитываем время логики и рендера, чтобы не спать лишние 16 мс каждый кадр
-    Uint64 frameTime = SDL_GetTicks() - frameStart;
-    if (frameTime < frameDelayMs) {
-        SDL_Delay(static_cast<Uint32>(frameDelayMs - frameTime));
+    //спим только оставшееся время кадра, чтобы держать targetFps
+    Uint64 frameTimeNs = SDL_GetTicksNS() - frameStartNs;
+    if (frameTimeNs < targetFrameNs) {
+        SDL_DelayNS(targetFrameNs - frameTimeNs);
     }
 
     return SDL_APP_CONTINUE;
@@ -195,6 +216,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
     (void)appstate;
     (void)result;
 
+    SDL_DestroyTexture(player);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
