@@ -12,14 +12,15 @@ static SDL_Texture *player = NULL;
 float speedRect = 600.0f;
 const Uint64 targetFps = 60;
 const Uint64 targetFrameNs = 1000000000 / targetFps;
-//выглядит страшно, но единственное что придумал это через bool привязать действия и сделать case для смены значения bool 
+//выглядит страшно, но единственное что придумал это через bool привязать действия и сделать case для смены значения bool
 bool moveUp = false;
 bool moveDown = false;
 bool moveLeft = false;
 bool moveRight = false;
 
 //объекты глобальные
-SDL_FRect rect = {100, 100, 130, 190};
+SDL_FRect rect = {100, 100, 192, 192};
+SDL_FRect playerSrcRect = {0, 0, 192, 192};
 
 enum MoveAction
 {
@@ -114,11 +115,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
-    player = IMG_LoadTexture(renderer, "/home/vladimir/dev/game/assets/custom/knight-main.png");
+    player = IMG_LoadTexture(renderer, "/home/vladimir/dev/game/assets/sprites/knight.png");
     if (player == NULL) {
         SDL_Log("IMG_LoadTexture failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
+    SDL_SetTextureScaleMode(player, SDL_SCALEMODE_NEAREST);
 
     return SDL_APP_CONTINUE;
 }
@@ -198,7 +200,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     SDL_RenderFillRect(renderer, &rect);
 
-    SDL_RenderTexture(renderer, player, NULL, &rect);
+    SDL_RenderTexture(renderer, player, &playerSrcRect, &rect);
 
     SDL_RenderPresent(renderer);
 
