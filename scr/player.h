@@ -8,6 +8,16 @@ typedef struct
     int y;
 } animation;
 
+typedef struct
+{
+    animation idle;
+    animation walk;
+    animation roll;
+    animation hit;
+    animation death;
+} animationData;
+
+
 
 class Player
 {
@@ -21,12 +31,17 @@ public:
     void Render(SDL_Renderer *renderer) const;
 
 private:
+    void initAnimations();
+    void playAnimation(const animation &animation);
+
     SDL_FRect rect;
     SDL_FRect srcRect;
     SDL_Texture *texture;
     float sizeSprite;
     float speed;
-    animation idle;
+    animationData animations;
     int currentIndex;
     Uint64 lastUpdate;
+    bool isWalk;
+    int currentAnimationY;
 };
