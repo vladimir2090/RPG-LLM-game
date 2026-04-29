@@ -3,11 +3,16 @@
 #include <SDL3_image/SDL_image.h>
 
 Player::Player()
-{
+{   
+    idle.animationDelay = 100;
+    idle.frames = 4;
+    idle.y = 0;
     texture = NULL;
     sizeSprite = 192;
+    currentIndex = 0;
+    lastUpdate = 0;
     rect = SDL_FRect{100, 100, sizeSprite, sizeSprite};
-    srcRect = SDL_FRect{0, 0, sizeSprite, sizeSprite};
+    srcRect = SDL_FRect{0, idle.y * sizeSprite, sizeSprite, sizeSprite};
     speed = 600.0f;
 }
 
@@ -49,6 +54,18 @@ void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, 
     }
     if (moveRight) {
         rect.x += step;
+    }
+
+    Uint64 now = SDL_GetTicks();
+    Uint64 delay = now - lastUpdate;
+    if(delay >= static_cast<Uint64>(idle.animationDelay)){
+        lastUpdate = now;
+        currentIndex++;
+        if (currentIndex >= idle.frames){
+            currentIndex = 0;
+        }
+        srcRect.x = currentIndex * sizeSprite;
+        srcRect.y = idle.y * sizeSprite;
     }
 }
 
