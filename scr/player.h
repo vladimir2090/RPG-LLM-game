@@ -43,5 +43,6 @@ private:
     int currentIndex;
     Uint64 lastUpdate;
     bool isWalk;
+    bool lookLeft;
     int currentAnimationY;
 };

@@ -11,6 +11,7 @@ Player::Player()
     currentIndex = 0;
     lastUpdate = 0;
     isWalk = false;
+    lookLeft = false;
     currentAnimationY = animations.idle.y;
     rect = SDL_FRect{100, 100, sizeSprite, sizeSprite};
     srcRect = SDL_FRect{0, animations.idle.y * sizeSprite, sizeSprite, sizeSprite};
@@ -76,7 +77,7 @@ void Player::Unload()
 void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight)
 {
     float step = speed * deltaTime;
-    isWalk = moveUp || moveDown || moveLeft || moveRight;
+    isWalk = moveUp ||  moveRight || moveDown || moveLeft;
 
     if (moveUp) {
         rect.y -= step;
@@ -86,9 +87,11 @@ void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, 
     }
     if (moveLeft) {
         rect.x -= step;
+        lookLeft = true;
     }
     if (moveRight) {
         rect.x += step;
+        lookLeft = false;
     }
 
     if (isWalk) {
@@ -101,5 +104,6 @@ void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, 
 void Player::Render(SDL_Renderer *renderer) const
 {
     SDL_RenderFillRect(renderer, &rect);
-    SDL_RenderTexture(renderer, texture, &srcRect, &rect);
+    SDL_FlipMode flip = lookLeft ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+    SDL_RenderTextureRotated(renderer, texture, &srcRect, &rect, 0.0, NULL, flip);
 }
