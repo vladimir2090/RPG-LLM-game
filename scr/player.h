@@ -15,6 +15,7 @@ public:
 
 private:
     SDL_Texture *texture;
+    float sizeSprite;
     SDL_FRect rect;
     SDL_FRect srcRect;
     float speed;

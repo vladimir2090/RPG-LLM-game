@@ -3,11 +3,12 @@
 #include <SDL3_image/SDL_image.h>
 
 Player::Player()
-    : texture(NULL),
-      rect{100, 100, 192, 192},
-      srcRect{0, 0, 192, 192},
-      speed(600.0f)
 {
+    texture = NULL;
+    sizeSprite = 192;
+    rect = SDL_FRect{100, 100, sizeSprite, sizeSprite};
+    srcRect = SDL_FRect{0, 0, sizeSprite, sizeSprite};
+    speed = 600.0f;
 }
 
 Player::~Player()
