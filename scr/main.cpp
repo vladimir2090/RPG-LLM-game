@@ -1,15 +1,15 @@
 #define SDL_MAIN_USE_CALLBACKS 1
+#include "player.h"
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-#include <SDL3_image/SDL_image.h>
 #include <iostream>
 
 //надо будет поменять в будущем для более точных классов
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
-static SDL_Texture *player = NULL;
+static Player player;
 
-float speedRect = 600.0f;
 const Uint64 targetFps = 60;
 const Uint64 targetFrameNs = 1000000000 / targetFps;
 //выглядит страшно, но единственное что придумал это через bool привязать действия и сделать case для смены значения bool
@@ -17,10 +17,6 @@ bool moveUp = false;
 bool moveDown = false;
 bool moveLeft = false;
 bool moveRight = false;
-
-//объекты глобальные
-SDL_FRect rect = {100, 100, 192, 192};
-SDL_FRect playerSrcRect = {0, 0, 192, 192};
 
 enum MoveAction
 {
@@ -115,12 +111,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
-    player = IMG_LoadTexture(renderer, "/home/vladimir/dev/game/assets/sprites/knight.png");
-    if (player == NULL) {
-        SDL_Log("IMG_LoadTexture failed: %s", SDL_GetError());
+    if (!player.Load(renderer, "/home/vladimir/dev/game/assets/sprites/knight.png")) {
         return SDL_APP_FAILURE;
     }
-    SDL_SetTextureScaleMode(player, SDL_SCALEMODE_NEAREST);
 
     return SDL_APP_CONTINUE;
 }
@@ -180,27 +173,11 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         deltaTime = 0.05f;
     }
 
-    float rectStep = speedRect * deltaTime;
-
     SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255);
     SDL_RenderClear(renderer);
 
-    if (moveUp) {
-        rect.y -= rectStep;
-    }
-    if (moveDown) {
-        rect.y += rectStep;
-    }
-    if (moveLeft) {
-        rect.x -= rectStep;
-    }
-    if (moveRight) {
-        rect.x += rectStep;
-    }
-
-    SDL_RenderFillRect(renderer, &rect);
-
-    SDL_RenderTexture(renderer, player, &playerSrcRect, &rect);
+    player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight);
+    player.Render(renderer);
 
     SDL_RenderPresent(renderer);
 
@@ -218,7 +195,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
     (void)appstate;
     (void)result;
 
-    SDL_DestroyTexture(player);
+    player.Unload();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

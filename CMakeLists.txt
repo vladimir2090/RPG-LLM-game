@@ -18,6 +18,7 @@ find_package(SDL3_image REQUIRED CONFIG)
 
 add_executable(game
     scr/main.cpp
+    scr/player.cpp
 )
 
 target_link_libraries(game PRIVATE
