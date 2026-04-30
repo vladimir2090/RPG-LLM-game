@@ -12,6 +12,7 @@ typedef struct
 {
     animation idle;
     animation walk;
+    animation atack;
     animation roll;
     animation hit;
     animation death;

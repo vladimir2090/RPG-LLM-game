@@ -26,11 +26,12 @@ Player::~Player()
 void Player::initAnimations(){
     animations.idle = {2, 800, 0};
     animations.walk = {16, 94, 1}; //я протестировал сам скороть под 94 взависимости от скорости 600
+    animations.atack = {4, 100, 5}; //атака
 }
 
 void Player::playAnimation(const animation &animation)
 {
-    Uint64 now = SDL_GetTicks();
+    Uint64 now = SDL_GetTicks();    //надо будет оптимизировать это
 
     if (currentAnimationY != animation.y) {
         currentAnimationY = animation.y;
