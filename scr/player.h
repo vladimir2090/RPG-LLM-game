@@ -1,24 +1,7 @@
 #pragma once
+#include "animation.h"
+
 #include <SDL3/SDL.h>
-
-typedef struct
-{
-    int frames;
-    int animationDelay;
-    int y;
-} animation;
-
-typedef struct
-{
-    animation idle;
-    animation walk;
-    animation atack;
-    animation roll;
-    animation hit;
-    animation death;
-} animationData;
-
-
 
 class Player
 {
@@ -33,19 +16,16 @@ public:
 
 private:
     void initAnimations();
-    bool playAnimation(const animation &animation, bool loop);
 
     SDL_FRect rect;
-    SDL_FRect srcRect;
     SDL_Texture *texture;
     float sizeSprite;
     float speed;
-    animationData animations;
-    int currentIndex;
-    Uint64 lastUpdate;
+    AnimationData animations;
+    Animation spriteAnimation;
     bool isWalk;
     bool isAttacking;
     bool attackWasPressed;
     bool lookLeft;
-    int currentAnimationY;
+    int health;
 };
