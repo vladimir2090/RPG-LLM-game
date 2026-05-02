@@ -17,6 +17,7 @@ bool moveUp = false;
 bool moveDown = false;
 bool moveLeft = false;
 bool moveRight = false;
+bool attack = false;
 
 enum MoveAction
 {
@@ -24,7 +25,8 @@ enum MoveAction
     MoveUp,
     MoveDown,
     MoveLeft,
-    MoveRight
+    MoveRight,
+    MoveAttack
 };
 
 static MoveAction GetMoveActionFromKey(SDL_Keycode key)
@@ -50,6 +52,9 @@ static MoveAction GetMoveActionFromKey(SDL_Keycode key)
         case 0x0412:  // Cyrillic 'В'
             return MoveRight;
 
+        case SDLK_SPACE:
+            return MoveAttack;
+
         default:
             return MoveNone;
     }
@@ -69,6 +74,9 @@ static void SetMoveState(MoveAction action, bool pressed)
             break;
         case MoveRight:
             moveRight = pressed;
+            break;
+        case MoveAttack:
+            attack = pressed;
             break;
         default:
             break;
@@ -138,7 +146,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
             SetMoveState(action, pressed);
             break;
         }
-        
+        //зачем мне мышка??
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
             std::cout << "mouse pressed: "
                       << GetMouseButtonName(event->button.button)
@@ -176,7 +184,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255);
     SDL_RenderClear(renderer);
 
-    player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight);
+    player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
     player.Render(renderer);
 
     SDL_RenderPresent(renderer);

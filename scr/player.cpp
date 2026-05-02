@@ -11,6 +11,9 @@ Player::Player()
     currentIndex = 0;
     lastUpdate = 0;
     isWalk = false;
+    //может зря я накинул 2 bool для атаки??
+    isAttacking = false;
+    attackWasPressed = false;
     lookLeft = false;
     currentAnimationY = animations.idle.y;
     rect = SDL_FRect{100, 100, sizeSprite, sizeSprite};
@@ -26,10 +29,10 @@ Player::~Player()
 void Player::initAnimations(){
     animations.idle = {2, 800, 0};
     animations.walk = {16, 94, 1}; //я протестировал сам скороть под 94 взависимости от скорости 600
-    animations.atack = {4, 100, 5}; //атака
+    animations.atack = {4, 90, 5}; //атака
 }
 
-void Player::playAnimation(const animation &animation)
+bool Player::playAnimation(const animation &animation, bool loop)
 {
     Uint64 now = SDL_GetTicks();    //надо будет оптимизировать это
 
@@ -39,23 +42,32 @@ void Player::playAnimation(const animation &animation)
         lastUpdate = now;
         srcRect.x = 0;
         srcRect.y = animation.y * sizeSprite;
-        return;
+        return false;
     }
 
     Uint64 delay = now - lastUpdate;
     if (delay < static_cast<Uint64>(animation.animationDelay)) {
-        return;
+        return false;
     }
 
     lastUpdate = now;
     currentIndex++;
-
+    
+    //если атака уже идёт, новая не начинается
     if (currentIndex >= animation.frames) {
+        if (!loop) {
+            currentIndex = animation.frames - 1;
+            srcRect.x = currentIndex * sizeSprite;
+            srcRect.y = animation.y * sizeSprite;
+            return true;
+        }
+
         currentIndex = 0;
     }
 
     srcRect.x = currentIndex * sizeSprite;
     srcRect.y = animation.y * sizeSprite;
+    return false;
 }
 
 bool Player::Load(SDL_Renderer *renderer, const char *texturePath)
@@ -75,7 +87,8 @@ void Player::Unload()
     SDL_DestroyTexture(texture);
     texture = NULL;
 }
-void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight)
+
+void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight, bool attack)
 {
     float step = speed * deltaTime;
     isWalk = moveUp ||  moveRight || moveDown || moveLeft;
@@ -95,11 +108,24 @@ void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, 
         lookLeft = false;
     }
 
-    if (isWalk) {
-        playAnimation(animations.walk);
-    } else {
-        playAnimation(animations.idle);
+    if (attack && !attackWasPressed && !isAttacking) {
+        isAttacking = true;
+        currentAnimationY = -1;
     }
+
+    if (isAttacking) {
+        bool attackFinished = playAnimation(animations.atack, false);
+        if (attackFinished) {
+            isAttacking = false;
+            currentAnimationY = -1;
+        }
+    } else if (isWalk) {
+        playAnimation(animations.walk, true);
+    } else {
+        playAnimation(animations.idle, true);
+    }
+
+    attackWasPressed = attack;
 }
 
 void Player::Render(SDL_Renderer *renderer) const

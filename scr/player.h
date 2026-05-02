@@ -28,12 +28,12 @@ public:
 
     bool Load(SDL_Renderer *renderer, const char *texturePath);
     void Unload();
-    void Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight);
+    void Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight, bool attack);
     void Render(SDL_Renderer *renderer) const;
 
 private:
     void initAnimations();
-    void playAnimation(const animation &animation);
+    bool playAnimation(const animation &animation, bool loop);
 
     SDL_FRect rect;
     SDL_FRect srcRect;
@@ -44,6 +44,8 @@ private:
     int currentIndex;
     Uint64 lastUpdate;
     bool isWalk;
+    bool isAttacking;
+    bool attackWasPressed;
     bool lookLeft;
     int currentAnimationY;
 };
