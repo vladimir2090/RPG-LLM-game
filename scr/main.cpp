@@ -1,4 +1,5 @@
 #define SDL_MAIN_USE_CALLBACKS 1
+#include "HUD.h"
 #include "player.h"
 
 #include <SDL3/SDL.h>
@@ -9,9 +10,12 @@
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static Player player;
+static HUD hud;
+int globalHudValue = 100;
 
 const Uint64 targetFps = 60;
 const Uint64 targetFrameNs = 1000000000 / targetFps;
+const float sizeHUD = 5.0f;
 //выглядит страшно, но единственное что придумал это через bool привязать действия и сделать case для смены значения bool
 bool moveUp = false;
 bool moveDown = false;
@@ -123,6 +127,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
+    hud.Load(&globalHudValue, sizeHUD);
+
     return SDL_APP_CONTINUE;
 }
 
@@ -186,6 +192,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
     player.Render(renderer);
+    hud.Render(renderer);
 
     SDL_RenderPresent(renderer);
 

@@ -36,10 +36,7 @@ bool Animation::Play(const AnimationClip &clip, bool loop)
         return false;
     }
 
-    Uint64 delay = now - lastUpdate;
-    if (delay < static_cast<Uint64>(clip.animationDelay)) {
-        return false;
-    }
+    if (now - lastUpdate < static_cast<Uint64>(clip.animationDelay)) {return false;}
 
     lastUpdate = now;
     currentIndex++;
