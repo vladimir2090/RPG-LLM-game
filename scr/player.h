@@ -13,6 +13,7 @@ public:
     void Unload();
     void Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight, bool attack);
     void Render(SDL_Renderer *renderer) const;
+    int *GetHealthPointer();
 
 private:
     void initAnimations();

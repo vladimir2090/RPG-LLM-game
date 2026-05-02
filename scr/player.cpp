@@ -99,3 +99,8 @@ void Player::Render(SDL_Renderer *renderer) const
     SDL_FlipMode flip = lookLeft ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
     SDL_RenderTextureRotated(renderer, texture, spriteAnimation.GetSourceRect(), &rect, 0.0, NULL, flip);
 }
+
+int *Player::GetHealthPointer()
+{
+    return &health;
+}

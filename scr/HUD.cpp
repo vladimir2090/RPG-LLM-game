@@ -3,6 +3,7 @@
 HUD::HUD()
 {
     value = NULL;
+    scale = 1.0f;
     //отступ
     x = 16.0f;
     y = 16.0f;

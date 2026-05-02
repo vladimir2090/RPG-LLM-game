@@ -11,7 +11,6 @@ static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static Player player;
 static HUD hud;
-int globalHudValue = 100;
 
 const Uint64 targetFps = 60;
 const Uint64 targetFrameNs = 1000000000 / targetFps;
@@ -127,7 +126,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
-    hud.Load(&globalHudValue, sizeHUD);
+    hud.Load(player.GetHealthPointer(), sizeHUD);
 
     return SDL_APP_CONTINUE;
 }
@@ -152,6 +151,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
             SetMoveState(action, pressed);
             break;
         }
+        /*
         //зачем мне мышка??
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
             std::cout << "mouse pressed: "
@@ -162,7 +162,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
                       << " y=" << event->button.y
                       << std::endl;
             break;
-
+        //оптимизировал
+        */
         default:
             break;
     }
