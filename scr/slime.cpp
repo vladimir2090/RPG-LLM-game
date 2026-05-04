@@ -52,6 +52,8 @@ void Slime::Update(float deltaTime)
     float step = speed * deltaTime * moveDirection;
     rect.x += step;
 
+    // ИИ слизня
+    // Скоро будет нейронка тут
     if (rect.x <= patrolStartX - patrolDistance) {
         moveDirection = 1;
         lookLeft = false;
@@ -61,7 +63,6 @@ void Slime::Update(float deltaTime)
         lookLeft = true;
     }
 
-    // как сделать прыжки??
     if (isWalk) {
         spriteAnimation.Play(animations.walk, true);
     } else {
