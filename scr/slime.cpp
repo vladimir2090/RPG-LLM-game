@@ -70,10 +70,19 @@ void Slime::Update(float deltaTime)
     }
 }
 
-void Slime::Render(SDL_Renderer *renderer) const
+void Slime::Render(SDL_Renderer *renderer, const SDL_FRect &camera) const
 {
+    SDL_FRect drawRect = rect;
+    drawRect.x -= camera.x;
+    drawRect.y -= camera.y;
+
     SDL_FlipMode flip = lookLeft ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-    SDL_RenderTextureRotated(renderer, texture, spriteAnimation.GetSourceRect(), &rect, 0.0, NULL, flip);
+    SDL_RenderTextureRotated(renderer, texture, spriteAnimation.GetSourceRect(), &drawRect, 0.0, NULL, flip);
+}
+
+SDL_FRect Slime::GetRect() const
+{
+    return rect;
 }
 
 int *Slime::GetHealthPointer()

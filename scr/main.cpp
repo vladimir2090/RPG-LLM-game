@@ -13,6 +13,7 @@ static SDL_Renderer *renderer = NULL;
 static Player player;
 static Slime slime;
 static HUD hud;
+static SDL_FRect camera = {0, 0, 1920, 1080};
 
 const Uint64 targetFps = 60;
 const Uint64 targetFrameNs = 1000000000 / targetFps;
@@ -86,6 +87,13 @@ static void SetMoveState(MoveAction action, bool pressed)
         default:
             break;
     }
+}
+
+static void UpdateCamera()
+{
+    SDL_FRect playerRect = player.GetRect();
+    camera.x = playerRect.x + playerRect.w / 2 - camera.w / 2;
+    camera.y = playerRect.y + playerRect.h / 2 - camera.h / 2;
 }
 
 /*
@@ -201,9 +209,10 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
     slime.Update(deltaTime);
+    UpdateCamera();
 
-    player.Render(renderer);
-    slime.Render(renderer);
+    player.Render(renderer, camera);
+    slime.Render(renderer, camera);
     hud.Render(renderer);
 
     SDL_RenderPresent(renderer);

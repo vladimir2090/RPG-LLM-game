@@ -12,7 +12,8 @@ public:
     bool Load(SDL_Renderer *renderer, const char *texturePath);
     void Unload();
     void Update(float deltaTime);
-    void Render(SDL_Renderer *renderer) const;
+    void Render(SDL_Renderer *renderer, const SDL_FRect &camera) const;
+    SDL_FRect GetRect() const;
     int *GetHealthPointer();
 
 private:

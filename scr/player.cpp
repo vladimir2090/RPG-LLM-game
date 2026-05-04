@@ -93,11 +93,20 @@ void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, 
     } 
 }
 
-void Player::Render(SDL_Renderer *renderer) const
+void Player::Render(SDL_Renderer *renderer, const SDL_FRect &camera) const
 {
-    SDL_RenderFillRect(renderer, &rect);
+    SDL_FRect drawRect = rect;
+    drawRect.x -= camera.x;
+    drawRect.y -= camera.y;
+
+    SDL_RenderFillRect(renderer, &drawRect);
     SDL_FlipMode flip = lookLeft ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-    SDL_RenderTextureRotated(renderer, texture, spriteAnimation.GetSourceRect(), &rect, 0.0, NULL, flip);
+    SDL_RenderTextureRotated(renderer, texture, spriteAnimation.GetSourceRect(), &drawRect, 0.0, NULL, flip);
+}
+
+SDL_FRect Player::GetRect() const
+{
+    return rect;
 }
 
 int *Player::GetHealthPointer()
