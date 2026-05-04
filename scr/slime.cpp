@@ -9,7 +9,7 @@ Slime::Slime()
     texture = NULL;
     sizeSprite = 144;
     spriteAnimation.SetSpriteSize(sizeSprite);
-    rect = SDL_FRect{100, 100, sizeSprite, sizeSprite};
+    rect = SDL_FRect{500, 500, sizeSprite, sizeSprite};
     speed = 120.0f;
     isWalk = true;
     lookLeft = true;
@@ -26,7 +26,7 @@ Slime::~Slime()
 
 void Slime::initAnimations()
 {
-    animations.walk = {6, 120, 0};
+    animations.walk = {4, 120, 1};
 }
 
 bool Slime::Load(SDL_Renderer *renderer, const char *texturePath)
@@ -51,7 +51,7 @@ void Slime::Update(float deltaTime)
 {
     float step = speed * deltaTime * moveDirection;
     rect.x += step;
-/*
+
     if (rect.x <= patrolStartX - patrolDistance) {
         moveDirection = 1;
         lookLeft = false;
@@ -61,13 +61,12 @@ void Slime::Update(float deltaTime)
         lookLeft = true;
     }
 
+    // как сделать прыжки??
     if (isWalk) {
         spriteAnimation.Play(animations.walk, true);
     } else {
         spriteAnimation.Play(animations.idle, true);
     }
-        // как сделать прыжки
-*/
 }
 
 void Slime::Render(SDL_Renderer *renderer) const

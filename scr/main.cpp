@@ -1,6 +1,7 @@
 #define SDL_MAIN_USE_CALLBACKS 1
 #include "HUD.h"
 #include "player.h"
+#include "slime.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -10,6 +11,7 @@
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static Player player;
+static Slime slime;
 static HUD hud;
 
 const Uint64 targetFps = 60;
@@ -86,6 +88,7 @@ static void SetMoveState(MoveAction action, bool pressed)
     }
 }
 
+/*
 //расшифровка кнопок мышки
 static const char *GetMouseButtonName(Uint8 button)
 {
@@ -104,6 +107,7 @@ static const char *GetMouseButtonName(Uint8 button)
             return "unknown";
     }
 }
+*/
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
@@ -123,6 +127,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     }
 
     if (!player.Load(renderer, "/home/vladimir/dev/game/assets/sprites/knight.png")) {
+        return SDL_APP_FAILURE;
+    }
+
+    if (!slime.Load(renderer, "/home/vladimir/dev/game/assets/sprites/slime_green.png")) {
         return SDL_APP_FAILURE;
     }
 
@@ -192,7 +200,10 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     SDL_RenderClear(renderer);
 
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
+    slime.Update(deltaTime);
+
     player.Render(renderer);
+    slime.Render(renderer);
     hud.Render(renderer);
 
     SDL_RenderPresent(renderer);
@@ -212,6 +223,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
     (void)result;
 
     player.Unload();
+    slime.Unload();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
