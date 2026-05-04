@@ -18,6 +18,7 @@ static SDL_FRect camera = {0, 0, 1920, 1080};
 const Uint64 targetFps = 60;
 const Uint64 targetFrameNs = 1000000000 / targetFps;
 const float sizeHUD = 5.0f;
+const float playerPower = 0.4f;
 //выглядит страшно, но единственное что придумал это через bool привязать действия и сделать case для смены значения bool
 bool moveUp = false;
 bool moveDown = false;
@@ -142,6 +143,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
+    if (!slime.LoadBrain("/home/vladimir/dev/game/ai/models/slime_weights.json")) {
+        SDL_Log("Slime brain was not loaded, using patrol fallback");
+    }
+
     hud.Load(player.GetHealthPointer(), sizeHUD);
 
     return SDL_APP_CONTINUE;
@@ -208,7 +213,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     SDL_RenderClear(renderer);
 
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
-    slime.Update(deltaTime);
+    slime.Update(deltaTime, player.GetRect(), playerPower);
     UpdateCamera();
 
     player.Render(renderer, camera);
