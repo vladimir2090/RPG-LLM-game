@@ -4,6 +4,9 @@ import torch.nn.functional as F
 import json
 from pathlib import Path
 
+AI_DIR = Path(__file__).parent
+WEIGHTS_PATH = AI_DIR / "models/slime_weights.json"
+
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -53,7 +56,7 @@ def choose_slime_move(net, state):
     return normalize_direction(move)
 
 def init_datasets(dataset_path="datasets/data.json"):
-    path = Path(__file__).parent / dataset_path
+    path = AI_DIR / dataset_path
 
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -61,6 +64,31 @@ def init_datasets(dataset_path="datasets/data.json"):
     inputs = torch.tensor(data["inputs"], dtype=torch.float32)
     targets = torch.tensor(data["targets"], dtype=torch.float32)
     return inputs, targets
+
+
+def save_weights(net, path=WEIGHTS_PATH):
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    weights = {}
+    for name, tensor in net.state_dict().items():
+        weights[name] = tensor.tolist()
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(weights, f, indent=2)
+
+    print(f"Saved weights: {path}")
+
+
+def load_weights(net, path=WEIGHTS_PATH):
+    with open(path, "r", encoding="utf-8") as f:
+        weights = json.load(f)
+
+    state_dict = net.state_dict()
+    for name in state_dict:
+        state_dict[name] = torch.tensor(weights[name], dtype=state_dict[name].dtype)
+
+    net.load_state_dict(state_dict)
+    print(f"Loaded weights: {path}")
 
 
 def teach(net, inputs, targets, epochs=1000):
@@ -85,6 +113,7 @@ def main():
     net = Net()
     inputs, targets = init_datasets()
     teach(net, inputs, targets)
+    save_weights(net)
 
     state = make_slime_state(
         player_x=800,
