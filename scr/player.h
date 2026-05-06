@@ -30,4 +30,5 @@ private:
     bool attackWasPressed;
     bool lookLeft;
     int health;
+    int damage;
 };

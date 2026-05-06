@@ -10,9 +10,9 @@ Player::Player()
     sizeSprite = 192;
     spriteAnimation.SetSpriteSize(sizeSprite);
     isWalk = false;
-    //может зря я накинул 2 bool для атаки??
     isAttacking = false;
     attackWasPressed = false;
+    damage = 20;
     lookLeft = false;
     rect = SDL_FRect{100, 100, sizeSprite, sizeSprite};
     speed = 600.0f;

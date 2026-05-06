@@ -31,6 +31,7 @@ private:
     bool isWalk;
     bool lookLeft;
     int health;
+    int damage;
     int moveDirection;
     float patrolStartX;
     float patrolDistance;

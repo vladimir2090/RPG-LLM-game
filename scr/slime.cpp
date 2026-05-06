@@ -72,7 +72,9 @@ Slime::Slime()
     speed = 120.0f;
     isWalk = true;
     lookLeft = true;
-    health = 30;
+    // да я делаю соус лайк
+    health = 80;
+    damage = 20; 
     moveDirection = -1;
     patrolStartX = rect.x;
     patrolDistance = 180.0f;
