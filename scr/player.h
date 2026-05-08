@@ -14,6 +14,7 @@ public:
     void Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight, bool attack);
     void Render(SDL_Renderer *renderer, const SDL_FRect &camera) const;
     SDL_FRect GetRect() const;
+    SDL_FRect GetHitbox() const;
     SDL_FRect GetAttackRect() const;
     int *GetHealthPointer();
     int GetDamage() const;

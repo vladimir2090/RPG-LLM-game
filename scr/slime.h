@@ -15,6 +15,7 @@ public:
     void Update(float deltaTime, const SDL_FRect &playerRect, float playerPower);
     void Render(SDL_Renderer *renderer, const SDL_FRect &camera) const;
     SDL_FRect GetRect() const;
+    SDL_FRect GetHitbox() const;
     int *GetHealthPointer();
     int GetDamage() const;
     bool IsDead() const;
@@ -32,6 +33,7 @@ private:
     AnimationData animations;
     Animation spriteAnimation;
     bool isWalk;
+    bool isHit;
     bool lookLeft;
     int health;
     int damage;

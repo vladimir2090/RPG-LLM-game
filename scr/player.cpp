@@ -109,6 +109,16 @@ SDL_FRect Player::GetRect() const
     return rect;
 }
 
+SDL_FRect Player::GetHitbox() const
+{
+    return SDL_FRect{
+        rect.x + 56.0f,
+        rect.y + 64.0f,
+        rect.w - 112.0f,
+        rect.h - 76.0f
+    };
+}
+
 SDL_FRect Player::GetAttackRect() const
 {
     float attackWidth = rect.w * 0.55f;

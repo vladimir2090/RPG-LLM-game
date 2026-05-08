@@ -71,6 +71,7 @@ Slime::Slime()
     rect = SDL_FRect{500, 500, sizeSprite, sizeSprite};
     speed = 120.0f;
     isWalk = true;
+    isHit = false;
     lookLeft = true;
     // да я делаю соус лайк
     health = 80;
@@ -185,7 +186,13 @@ void Slime::Update(float deltaTime, const SDL_FRect &playerRect, float playerPow
         }
     }
 
-    if (isWalk) {
+    if (isHit) {
+        bool hitFinished = spriteAnimation.Play(animations.hit, false);
+        if (hitFinished) {
+            isHit = false;
+            spriteAnimation.Restart();
+        }
+    } else if (isWalk) {
         spriteAnimation.Play(animations.walk, true);
     } else {
         spriteAnimation.Play(animations.idle, true);
@@ -261,6 +268,16 @@ SDL_FRect Slime::GetRect() const
 {
     return rect;
 }
+SDL_FRect Slime::GetHitbox() const
+{
+    return SDL_FRect{
+        rect.x + 36,
+        rect.y + 48,
+        rect.w - 72,
+        rect.h - 56
+    };
+}
+
 
 int *Slime::GetHealthPointer()
 {
@@ -280,4 +297,6 @@ bool Slime::IsDead() const
 void Slime::TakeDamage(int incomingDamage)
 {
     health = std::max(0, health - incomingDamage);
+    isHit = !IsDead();
+    spriteAnimation.Restart();
 }

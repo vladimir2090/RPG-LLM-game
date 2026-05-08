@@ -95,7 +95,7 @@ static void SetMoveState(MoveAction action, bool pressed)
 
 static void UpdateCamera()
 {
-    SDL_FRect playerRect = player.GetRect();
+    SDL_FRect playerRect = player.GetHitbox();
     camera.x = playerRect.x + playerRect.w / 2 - camera.w / 2;
     camera.y = playerRect.y + playerRect.h / 2 - camera.h / 2;
 }
@@ -107,8 +107,8 @@ static void UpdateCombat(float deltaTime)
     }
 
     if (!slime.IsDead() && !player.IsDead()) {
-        SDL_FRect playerRect = player.GetRect();
-        SDL_FRect slimeRect = slime.GetRect();
+        SDL_FRect playerRect = player.GetHitbox();
+        SDL_FRect slimeRect = slime.GetHitbox();
 
         if (SDL_HasRectIntersectionFloat(&playerRect, &slimeRect) && slimeContactDamageCooldown <= 0.0f) {
             player.TakeDamage(slime.GetDamage());
@@ -244,7 +244,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
     if (!slime.IsDead()) {
-        slime.Update(deltaTime, player.GetRect(), playerPower);
+        slime.Update(deltaTime, player.GetHitbox(), playerPower);
     }
     UpdateCombat(deltaTime);
     UpdateCamera();
