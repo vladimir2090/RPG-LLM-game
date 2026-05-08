@@ -156,7 +156,7 @@ bool Player::IsAttacking() const
 
 bool Player::IsDead() const
 {
-    return health <= 0;
+    return health < 0; //я добавил последнее дыхание
 }
 
 void Player::TakeDamage(int incomingDamage)
