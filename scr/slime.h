@@ -16,6 +16,9 @@ public:
     void Render(SDL_Renderer *renderer, const SDL_FRect &camera) const;
     SDL_FRect GetRect() const;
     int *GetHealthPointer();
+    int GetDamage() const;
+    bool IsDead() const;
+    void TakeDamage(int damage);
 
 private:
     void initAnimations();

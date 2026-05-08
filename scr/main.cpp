@@ -19,6 +19,9 @@ const Uint64 targetFps = 60;
 const Uint64 targetFrameNs = 1000000000 / targetFps;
 const float sizeHUD = 5.0f;
 const float playerPower = 0.4f;
+const float slimeContactDamageDelay = 0.7f;
+static float slimeContactDamageCooldown = 0.0f;
+static bool playerAttackHitDone = false;
 //выглядит страшно, но единственное что придумал это через bool привязать действия и сделать case для смены значения bool
 bool moveUp = false;
 bool moveDown = false;
@@ -95,6 +98,33 @@ static void UpdateCamera()
     SDL_FRect playerRect = player.GetRect();
     camera.x = playerRect.x + playerRect.w / 2 - camera.w / 2;
     camera.y = playerRect.y + playerRect.h / 2 - camera.h / 2;
+}
+
+static void UpdateCombat(float deltaTime)
+{
+    if (slimeContactDamageCooldown > 0.0f) {
+        slimeContactDamageCooldown -= deltaTime;
+    }
+
+    if (!slime.IsDead() && !player.IsDead()) {
+        SDL_FRect playerRect = player.GetRect();
+        SDL_FRect slimeRect = slime.GetRect();
+
+        if (SDL_HasRectIntersectionFloat(&playerRect, &slimeRect) && slimeContactDamageCooldown <= 0.0f) {
+            player.TakeDamage(slime.GetDamage());
+            slimeContactDamageCooldown = slimeContactDamageDelay;
+        }
+
+        if (player.IsAttacking()) {
+            SDL_FRect attackRect = player.GetAttackRect();
+            if (!playerAttackHitDone && SDL_HasRectIntersectionFloat(&attackRect, &slimeRect)) {
+                slime.TakeDamage(player.GetDamage());
+                playerAttackHitDone = true;
+            }
+        } else {
+            playerAttackHitDone = false;
+        }
+    }
 }
 
 /*
@@ -213,7 +243,10 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     SDL_RenderClear(renderer);
 
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
-    slime.Update(deltaTime, player.GetRect(), playerPower);
+    if (!slime.IsDead()) {
+        slime.Update(deltaTime, player.GetRect(), playerPower);
+    }
+    UpdateCombat(deltaTime);
     UpdateCamera();
 
     player.Render(renderer, camera);
@@ -221,6 +254,11 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     hud.Render(renderer);
 
     SDL_RenderPresent(renderer);
+
+    if (player.IsDead()) {
+        SDL_Log("Player died");
+        return SDL_APP_SUCCESS;
+    }
 
     //спим только оставшееся время кадра, чтобы держать targetFps
     Uint64 frameTimeNs = SDL_GetTicksNS() - frameStartNs;

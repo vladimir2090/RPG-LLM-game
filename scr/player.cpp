@@ -1,5 +1,6 @@
 #include "player.h"
 #include <SDL3_image/SDL_image.h>
+#include <algorithm>
 
 Player::Player()
 {   
@@ -87,10 +88,9 @@ void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, 
 
     attackWasPressed = attack;
 
-    if (health <= 0){
-        //а как игру то сейвить и перса килять???
-        //я конечно могу сделать рогалик, но стоит?
-    } 
+    if (health <= 0) {
+        health = 0;
+    }
 }
 
 void Player::Render(SDL_Renderer *renderer, const SDL_FRect &camera) const
@@ -109,7 +109,37 @@ SDL_FRect Player::GetRect() const
     return rect;
 }
 
+SDL_FRect Player::GetAttackRect() const
+{
+    float attackWidth = rect.w * 0.55f;
+    float attackHeight = rect.h * 0.55f;
+    float attackY = rect.y + (rect.h - attackHeight) / 2.0f;
+    float attackX = lookLeft ? rect.x - attackWidth : rect.x + rect.w;
+
+    return SDL_FRect{attackX, attackY, attackWidth, attackHeight};
+}
+
 int *Player::GetHealthPointer()
 {
     return &health;
+}
+
+int Player::GetDamage() const
+{
+    return damage;
+}
+
+bool Player::IsAttacking() const
+{
+    return isAttacking;
+}
+
+bool Player::IsDead() const
+{
+    return health <= 0;
+}
+
+void Player::TakeDamage(int incomingDamage)
+{
+    health = std::max(0, health - incomingDamage);
 }

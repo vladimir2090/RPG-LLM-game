@@ -89,6 +89,7 @@ Slime::~Slime()
 void Slime::initAnimations()
 {
     animations.walk = {4, 120, 1};
+    animations.hit = {4, 120, 2};
 }
 
 bool Slime::Load(SDL_Renderer *renderer, const char *texturePath)
@@ -156,6 +157,10 @@ void Slime::Unload()
 //надо сделать загрузку от deltaTime
 void Slime::Update(float deltaTime, const SDL_FRect &playerRect, float playerPower)
 {
+    if (IsDead()) {
+        return;
+    }
+
     if (brainLoaded) {
         SDL_FPoint move = PredictMove(playerRect, playerPower);
         rect.x += move.x * speed * deltaTime;
@@ -240,6 +245,10 @@ SDL_FPoint Slime::NormalizeMove(float x, float y) const
 
 void Slime::Render(SDL_Renderer *renderer, const SDL_FRect &camera) const
 {
+    if (IsDead()) {
+        return;
+    }
+
     SDL_FRect drawRect = rect;
     drawRect.x -= camera.x;
     drawRect.y -= camera.y;
@@ -256,4 +265,19 @@ SDL_FRect Slime::GetRect() const
 int *Slime::GetHealthPointer()
 {
     return &health;
+}
+
+int Slime::GetDamage() const
+{
+    return damage;
+}
+
+bool Slime::IsDead() const
+{
+    return health <= 0;
+}
+
+void Slime::TakeDamage(int incomingDamage)
+{
+    health = std::max(0, health - incomingDamage);
 }
