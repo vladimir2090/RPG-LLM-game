@@ -37,7 +37,6 @@ def normalize_direction(move):
     length = (move[0] * move[0] + move[1] * move[1]) ** 0.5
     if length < 0.001:
         return torch.tensor([0.0, 0.0])
-
     return move / length
 
 
@@ -91,7 +90,7 @@ def load_weights(net, path=WEIGHTS_PATH):
     print(f"Loaded weights: {path}")
 
 
-def teach(net, inputs, targets, epochs=1000):
+def teach(net, inputs, targets, epochs=3000):
     optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
 
     for epoch in range(epochs):
@@ -110,6 +109,7 @@ def main():
     print(f"PyTorch version: {torch.__version__}")
     print(f"CUDA available: {torch.cuda.is_available()}")
 
+    torch.manual_seed(7)
     net = Net()
     inputs, targets = init_datasets()
     teach(net, inputs, targets)
@@ -118,11 +118,11 @@ def main():
     state = make_slime_state(
         player_x=800,
         player_y=500,
-        player_power=0.4,
+        player_power=0.2,
         slime_x=500,
         slime_y=500,
-        slime_hp=30,
-        slime_max_hp=30,
+        slime_hp=80,
+        slime_max_hp=80,
     )
     move = choose_slime_move(net, state)
     print(f"Normal state: {state}")
@@ -131,11 +131,11 @@ def main():
     scared_state = make_slime_state(
         player_x=800,
         player_y=500,
-        player_power=0.9,
+        player_power=1.0,
         slime_x=500,
         slime_y=500,
-        slime_hp=10,
-        slime_max_hp=30,
+        slime_hp=80,
+        slime_max_hp=80,
     )
     scared_move = choose_slime_move(net, scared_state)
     print(f"Scared state: {scared_state}")

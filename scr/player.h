@@ -17,6 +17,7 @@ public:
     SDL_FRect GetHitbox() const;
     SDL_FRect GetAttackRect() const;
     int *GetHealthPointer();
+    float GetHealthPercent() const;
     int GetDamage() const;
     bool IsAttacking() const;
     bool IsDead() const;
@@ -35,6 +36,7 @@ private:
     bool isAttacking;
     bool attackWasPressed;
     bool lookLeft;
+    int maxHealth;
     int health;
     int damage;
 };

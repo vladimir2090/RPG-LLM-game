@@ -74,7 +74,8 @@ Slime::Slime()
     isHit = false;
     lookLeft = true;
     // да я делаю соус лайк
-    health = 80;
+    maxHealth = 80;
+    health = maxHealth;
     damage = 20; 
     moveDirection = -1;
     patrolStartX = rect.x;
@@ -201,18 +202,30 @@ void Slime::Update(float deltaTime, const SDL_FRect &playerRect, float playerPow
 //предиктим
 SDL_FPoint Slime::PredictMove(const SDL_FRect &playerRect, float playerPower) const
 {
-    float slimeCenterX = rect.x + rect.w / 2;
-    float slimeCenterY = rect.y + rect.h / 2;
+    SDL_FRect slimeHitbox = GetHitbox();
+    float slimeCenterX = slimeHitbox.x + slimeHitbox.w / 2;
+    float slimeCenterY = slimeHitbox.y + slimeHitbox.h / 2;
     float playerCenterX = playerRect.x + playerRect.w / 2;
     float playerCenterY = playerRect.y + playerRect.h / 2;
 
-    float dx = (playerCenterX - slimeCenterX) / 1000.0f;
-    float dy = (playerCenterY - slimeCenterY) / 1000.0f;
-    float distance = std::min(std::sqrt(dx * dx + dy * dy), 1.0f);
-    float slimeHealth = health / 30.0f;
+    float rawDx = playerCenterX - slimeCenterX;
+    float rawDy = playerCenterY - slimeCenterY;
+    float rawDistance = std::sqrt(rawDx * rawDx + rawDy * rawDy);
+    float dx = rawDx / 1000.0f;
+    float dy = rawDy / 1000.0f;
+    float distance = std::min(rawDistance / 1000.0f, 1.0f);
+    float slimeHealth = static_cast<float>(health) / static_cast<float>(maxHealth);
 
     if (playerPower > 0.8f || slimeHealth < 0.25f) {
         return NormalizeMove(-dx, -dy);
+    }
+
+    if (rawDistance < 8.0f) {
+        return SDL_FPoint{0.0f, 0.0f};
+    }
+
+    if (distance < 0.25f) {
+        return NormalizeMove(dx, dy);
     }
 
     float input[5] = {dx, dy, distance, playerPower, slimeHealth};

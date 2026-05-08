@@ -17,7 +17,8 @@ Player::Player()
     lookLeft = false;
     rect = SDL_FRect{100, 100, sizeSprite, sizeSprite};
     speed = 600.0f;
-    health = 100;
+    maxHealth = 100;
+    health = maxHealth;
 }
 
 Player::~Player()
@@ -132,6 +133,15 @@ SDL_FRect Player::GetAttackRect() const
 int *Player::GetHealthPointer()
 {
     return &health;
+}
+
+float Player::GetHealthPercent() const
+{
+    if (maxHealth <= 0) {
+        return 0.0f;
+    }
+
+    return static_cast<float>(health) / static_cast<float>(maxHealth);
 }
 
 int Player::GetDamage() const

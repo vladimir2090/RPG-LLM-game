@@ -35,6 +35,7 @@ private:
     bool isWalk;
     bool isHit;
     bool lookLeft;
+    int maxHealth;
     int health;
     int damage;
     int moveDirection;

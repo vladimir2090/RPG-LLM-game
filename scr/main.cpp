@@ -18,7 +18,6 @@ static SDL_FRect camera = {0, 0, 1920, 1080};
 const Uint64 targetFps = 60;
 const Uint64 targetFrameNs = 1000000000 / targetFps;
 const float sizeHUD = 5.0f;
-const float playerPower = 0.4f;
 const float slimeContactDamageDelay = 0.7f;
 static float slimeContactDamageCooldown = 0.0f;
 static bool playerAttackHitDone = false;
@@ -244,7 +243,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
     if (!slime.IsDead()) {
-        slime.Update(deltaTime, player.GetHitbox(), playerPower);
+        slime.Update(deltaTime, player.GetHitbox(), player.GetHealthPercent());
     }
     UpdateCombat(deltaTime);
     UpdateCamera();
