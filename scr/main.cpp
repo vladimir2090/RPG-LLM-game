@@ -1,7 +1,5 @@
 #define SDL_MAIN_USE_CALLBACKS 1
-#include "HUD.h"
-#include "player.h"
-#include "slime.h"
+#include "world.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -10,17 +8,10 @@
 //надо будет поменять в будущем для более точных классов
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
-static Player player;
-static Slime slime;
-static HUD hud;
-static SDL_FRect camera = {0, 0, 1920, 1080};
+static World world;
 
 const Uint64 targetFps = 60;
 const Uint64 targetFrameNs = 1000000000 / targetFps;
-const float sizeHUD = 5.0f;
-const float slimeContactDamageDelay = 0.7f;
-static float slimeContactDamageCooldown = 0.0f;
-static bool playerAttackHitDone = false;
 //выглядит страшно, но единственное что придумал это через bool привязать действия и сделать case для смены значения bool
 bool moveUp = false;
 bool moveDown = false;
@@ -92,40 +83,6 @@ static void SetMoveState(MoveAction action, bool pressed)
     }
 }
 
-static void UpdateCamera()
-{
-    SDL_FRect playerRect = player.GetHitbox();
-    camera.x = playerRect.x + playerRect.w / 2 - camera.w / 2;
-    camera.y = playerRect.y + playerRect.h / 2 - camera.h / 2;
-}
-
-static void UpdateCombat(float deltaTime)
-{
-    if (slimeContactDamageCooldown > 0.0f) {
-        slimeContactDamageCooldown -= deltaTime;
-    }
-
-    if (!slime.IsDead() && !player.IsDead()) {
-        SDL_FRect playerRect = player.GetHitbox();
-        SDL_FRect slimeRect = slime.GetHitbox();
-
-        if (SDL_HasRectIntersectionFloat(&playerRect, &slimeRect) && slimeContactDamageCooldown <= 0.0f) {
-            player.TakeDamage(slime.GetDamage());
-            slimeContactDamageCooldown = slimeContactDamageDelay;
-        }
-
-        if (player.IsAttacking()) {
-            SDL_FRect attackRect = player.GetAttackRect();
-            if (!playerAttackHitDone && SDL_HasRectIntersectionFloat(&attackRect, &slimeRect)) {
-                slime.TakeDamage(player.GetDamage());
-                playerAttackHitDone = true;
-            }
-        } else {
-            playerAttackHitDone = false;
-        }
-    }
-}
-
 /*
 //расшифровка кнопок мышки
 static const char *GetMouseButtonName(Uint8 button)
@@ -164,19 +121,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
-    if (!player.Load(renderer, "/home/vladimir/dev/game/assets/sprites/knight.png")) {
+    if (!world.Load(renderer)) {
         return SDL_APP_FAILURE;
     }
-
-    if (!slime.Load(renderer, "/home/vladimir/dev/game/assets/sprites/slime_green.png")) {
-        return SDL_APP_FAILURE;
-    }
-
-    if (!slime.LoadBrain("/home/vladimir/dev/game/ai/models/slime_weights.json")) {
-        SDL_Log("Slime brain was not loaded, using patrol fallback");
-    }
-
-    hud.Load(player.GetHealthPointer(), sizeHUD);
 
     return SDL_APP_CONTINUE;
 }
@@ -241,20 +188,12 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255);
     SDL_RenderClear(renderer);
 
-    player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
-    if (!slime.IsDead()) {
-        slime.Update(deltaTime, player.GetHitbox(), player.GetHealthPercent());
-    }
-    UpdateCombat(deltaTime);
-    UpdateCamera();
-
-    player.Render(renderer, camera);
-    slime.Render(renderer, camera);
-    hud.Render(renderer);
+    world.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
+    world.Render(renderer);
 
     SDL_RenderPresent(renderer);
 
-    if (player.IsDead()) {
+    if (world.IsPlayerDead()) {
         SDL_Log("Player died");
         return SDL_APP_SUCCESS;
     }
@@ -273,8 +212,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
     (void)appstate;
     (void)result;
 
-    player.Unload();
-    slime.Unload();
+    world.Unload();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

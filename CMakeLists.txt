@@ -22,6 +22,7 @@ add_executable(game
     scr/animation.cpp
     scr/player.cpp
     scr/slime.cpp
+    scr/world.cpp
 )
 
 target_link_libraries(game PRIVATE

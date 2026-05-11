@@ -8,10 +8,15 @@ class Slime
 public:
     Slime();
     ~Slime();
+    Slime(const Slime &) = delete;
+    Slime &operator=(const Slime &) = delete;
+    Slime(Slime &&other) noexcept;
+    Slime &operator=(Slime &&other) noexcept;
 
     bool Load(SDL_Renderer *renderer, const char *texturePath);
     bool LoadBrain(const char *weightsPath);
     void Unload();
+    void SetPosition(float x, float y);
     void Update(float deltaTime, const SDL_FRect &playerRect, float playerPower);
     void Render(SDL_Renderer *renderer, const SDL_FRect &camera) const;
     SDL_FRect GetRect() const;

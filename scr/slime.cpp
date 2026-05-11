@@ -88,6 +88,85 @@ Slime::~Slime()
     Unload();
 }
 
+Slime::Slime(Slime &&other) noexcept
+{
+    rect = other.rect;
+    texture = other.texture;
+    sizeSprite = other.sizeSprite;
+    speed = other.speed;
+    animations = other.animations;
+    spriteAnimation = other.spriteAnimation;
+    isWalk = other.isWalk;
+    isHit = other.isHit;
+    lookLeft = other.lookLeft;
+    maxHealth = other.maxHealth;
+    health = other.health;
+    damage = other.damage;
+    moveDirection = other.moveDirection;
+    patrolStartX = other.patrolStartX;
+    patrolDistance = other.patrolDistance;
+    brainLoaded = other.brainLoaded;
+
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 5; col++) {
+            fc1Weight[row][col] = other.fc1Weight[row][col];
+        }
+        fc1Bias[row] = other.fc1Bias[row];
+    }
+
+    for (int row = 0; row < 2; row++) {
+        for (int col = 0; col < 8; col++) {
+            fc2Weight[row][col] = other.fc2Weight[row][col];
+        }
+        fc2Bias[row] = other.fc2Bias[row];
+    }
+
+    other.texture = NULL;
+}
+
+Slime &Slime::operator=(Slime &&other) noexcept
+{
+    if (this == &other) {
+        return *this;
+    }
+
+    Unload();
+
+    rect = other.rect;
+    texture = other.texture;
+    sizeSprite = other.sizeSprite;
+    speed = other.speed;
+    animations = other.animations;
+    spriteAnimation = other.spriteAnimation;
+    isWalk = other.isWalk;
+    isHit = other.isHit;
+    lookLeft = other.lookLeft;
+    maxHealth = other.maxHealth;
+    health = other.health;
+    damage = other.damage;
+    moveDirection = other.moveDirection;
+    patrolStartX = other.patrolStartX;
+    patrolDistance = other.patrolDistance;
+    brainLoaded = other.brainLoaded;
+
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 5; col++) {
+            fc1Weight[row][col] = other.fc1Weight[row][col];
+        }
+        fc1Bias[row] = other.fc1Bias[row];
+    }
+
+    for (int row = 0; row < 2; row++) {
+        for (int col = 0; col < 8; col++) {
+            fc2Weight[row][col] = other.fc2Weight[row][col];
+        }
+        fc2Bias[row] = other.fc2Bias[row];
+    }
+
+    other.texture = NULL;
+    return *this;
+}
+
 void Slime::initAnimations()
 {
     animations.walk = {4, 120, 1};
@@ -157,6 +236,14 @@ void Slime::Unload()
     SDL_DestroyTexture(texture);
     texture = NULL;
 }
+
+void Slime::SetPosition(float x, float y)
+{
+    rect.x = x;
+    rect.y = y;
+    patrolStartX = x;
+}
+
 //надо сделать загрузку от deltaTime
 void Slime::Update(float deltaTime, const SDL_FRect &playerRect, float playerPower)
 {
