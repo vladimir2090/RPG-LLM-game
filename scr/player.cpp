@@ -13,6 +13,7 @@ Player::Player()
     isWalk = false;
     isAttacking = false;
     attackWasPressed = false;
+    isHit = false;
     isDying = false;
     isDead = false;
     damage = 20;
@@ -30,8 +31,9 @@ Player::~Player()
 
 void Player::initAnimations(){
     animations.idle = {2, 800, 0};
-    animations.walk = {16, 94, 1}; //я протестировал сам скороть под 94 взависимости от скорости 600
-    animations.atack = {4, 90, 5}; //атака
+    animations.walk = {16, 94, 1};
+    animations.atack = {4, 90, 5};
+    animations.hit = {4, 90, 3};
     animations.death = {4, 90, 4}; 
 }
 
@@ -90,7 +92,13 @@ void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, 
         spriteAnimation.Restart();
     }
 
-    if (isAttacking) {
+    if (isHit) {
+        bool hitFinished = spriteAnimation.Play(animations.hit, false);
+        if (hitFinished) {
+            isHit = false;
+            spriteAnimation.Restart();
+        }
+    } else if (isAttacking) {
         bool attackFinished = spriteAnimation.Play(animations.atack, false);
         if (attackFinished) {
             isAttacking = false;
@@ -193,7 +201,12 @@ void Player::TakeDamage(int incomingDamage)
     if (health < 0) {
         isDying = true;
         isAttacking = false;
+        isHit = false;
         isWalk = false;
+        spriteAnimation.Restart();
+    } else {
+        isHit = true;
+        isAttacking = false;
         spriteAnimation.Restart();
     }
 }

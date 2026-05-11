@@ -172,6 +172,7 @@ void Slime::initAnimations()
     animations.walk = {4, 120, 1};
     animations.idle = {2, 120, 3};
     animations.hit = {4, 120, 2};
+    animations.spawn = {4, 120, 0};
 }
 
 bool Slime::Load(SDL_Renderer *renderer, const char *texturePath)

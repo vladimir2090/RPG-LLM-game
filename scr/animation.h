@@ -17,6 +17,7 @@ typedef struct
     AnimationClip roll;
     AnimationClip hit;
     AnimationClip death;
+    AnimationClip spawn;
 } AnimationData;
 
 class Animation

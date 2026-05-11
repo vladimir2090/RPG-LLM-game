@@ -36,6 +36,7 @@ private:
     bool isWalk;
     bool isAttacking;
     bool attackWasPressed;
+    bool isHit;
     bool isDying;
     bool isDead;
     bool lookLeft;
