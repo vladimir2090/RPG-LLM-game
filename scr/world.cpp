@@ -1,16 +1,61 @@
 #include "world.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+
 const float sizeHUD = 5.0f;
 const float slimeContactDamageDelay = 0.7f;
+const int mapWidth = 800;
+const int mapHeight = 500;
+const int tileSize = 64;
 const char *playerTexturePath = "/home/vladimir/dev/game/assets/sprites/knight.png";
 const char *slimeTexturePath = "/home/vladimir/dev/game/assets/sprites/slime_green.png";
 const char *slimeBrainPath = "/home/vladimir/dev/game/ai/models/slime_weights.json";
+
+struct DrawColor
+{
+    Uint8 r;
+    Uint8 g;
+    Uint8 b;
+    Uint8 a;
+};
+
+static float Hash01(int x, int y, int seed)
+{
+    uint32_t value = static_cast<uint32_t>(x) * 374761393u;
+    value += static_cast<uint32_t>(y) * 668265263u;
+    value += static_cast<uint32_t>(seed) * 2246822519u;
+    value = (value ^ (value >> 13)) * 1274126177u;
+    value ^= value >> 16;
+    return static_cast<float>(value & 0x00FFFFFFu) / static_cast<float>(0x01000000u);
+}
+
+static DrawColor GetGroundColor(TileType type)
+{
+    switch (type) {
+        //как нарисую текстурки сделаю парс png как в player.cpp
+        case TileType::Grass:
+            return DrawColor{52, 139, 55, 255};
+        case TileType::DarkGrass:
+            return DrawColor{35, 105, 48, 255};
+        case TileType::Dirt:
+            return DrawColor{117, 91, 55, 255};
+        case TileType::Moss:
+            return DrawColor{78, 128, 63, 255};
+        case TileType::Mud:
+            return DrawColor{84, 72, 50, 255};
+        default:
+            return DrawColor{52, 139, 55, 255};
+    }
+}
 
 World::World()
 {
     camera = SDL_FRect{0.0f, 0.0f, 1920.0f, 1080.0f};
     slimeContactDamageCooldown = 0.0f;
     playerAttackHitDone = false;
+    worldTime = 0.0f;
 }
 
 bool World::Load(SDL_Renderer *renderer)
@@ -19,6 +64,8 @@ bool World::Load(SDL_Renderer *renderer)
         return false;
     }
 
+    GenerateGround();
+    GenerateVegetation();
     GenerateSlimes(renderer);
     hud.Load(player.GetHealthPointer(), sizeHUD);
     return true;
@@ -31,6 +78,84 @@ void World::Unload()
         slime.Unload();
     }
     slimes.clear();
+    tiles.clear();
+    vegetation.clear();
+}
+
+void World::GenerateGround()
+{
+    tiles.clear();
+    tiles.resize(mapWidth * mapHeight);
+
+    for (int y = 0; y < mapHeight; y++) {
+        for (int x = 0; x < mapWidth; x++) {
+            float cluster = Hash01(x / 4, y / 4, 11);
+            float detail = Hash01(x, y, 23);
+            TileType type = TileType::Grass;
+
+            if (cluster < 0.12f) {
+                type = detail < 0.75f ? TileType::Dirt : TileType::Mud;
+            } else if (cluster < 0.22f) {
+                type = TileType::Moss;
+            } else if (cluster > 0.82f) {
+                type = TileType::DarkGrass;
+            } else if (detail > 0.94f) {
+                type = TileType::Dirt;
+            }
+
+            tiles[y * mapWidth + x] = Tile{type};
+        }
+    }
+}
+
+void World::GenerateVegetation()
+{
+    vegetation.clear();
+
+    for (int y = 0; y < mapHeight; y++) {
+        for (int x = 0; x < mapWidth; x++) {
+            TileType ground = tiles[y * mapWidth + x].type;
+            if (ground == TileType::Dirt || ground == TileType::Mud) {
+                continue;
+            }
+
+            float chance = Hash01(x, y, 41);
+            int patchCount = 0;
+            VegetationType type = VegetationType::TallGrass;
+
+            if (ground == TileType::DarkGrass && chance < 0.55f) {
+                patchCount = 2;
+                type = VegetationType::TallGrass;
+            } else if (ground == TileType::Moss && chance < 0.30f) {
+                patchCount = 1;
+                type = VegetationType::TallGrass;
+            } else if (chance > 0.92f) {
+                patchCount = 3;
+                type = VegetationType::Rye;
+            } else if (chance < 0.20f) {
+                patchCount = 1;
+                type = VegetationType::TallGrass;
+            }
+
+            for (int i = 0; i < patchCount; i++) {
+                float offsetX = Hash01(x, y, 100 + i) * 42.0f + 8.0f;
+                float offsetY = Hash01(x, y, 200 + i) * 42.0f + 10.0f;
+                float width = type == VegetationType::Rye ? 34.0f : 28.0f;
+                float height = type == VegetationType::Rye ? 50.0f : 34.0f;
+
+                vegetation.push_back(VegetationPatch{
+                    type,
+                    SDL_FRect{
+                        x * static_cast<float>(tileSize) + offsetX,
+                        y * static_cast<float>(tileSize) + offsetY,
+                        width,
+                        height
+                    },
+                    Hash01(x, y, 300 + i) * 6.28f
+                });
+            }
+        }
+    }
 }
 
 void World::GenerateSlimes(SDL_Renderer *renderer)
@@ -63,6 +188,7 @@ void World::GenerateSlimes(SDL_Renderer *renderer)
 
 void World::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight, bool attack)
 {
+    worldTime += deltaTime;
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
 
     for (Slime &slime : slimes) {
@@ -123,13 +249,99 @@ void World::UpdateCombat(float deltaTime)
 
 void World::Render(SDL_Renderer *renderer) const
 {
+    RenderGround(renderer);
+
     player.Render(renderer, camera);
 
     for (const Slime &slime : slimes) {
         slime.Render(renderer, camera);
     }
 
+    RenderVegetation(renderer);
     hud.Render(renderer);
+}
+
+void World::RenderGround(SDL_Renderer *renderer) const
+{
+    int startX = std::max(0, static_cast<int>(camera.x / tileSize) - 1);
+    int startY = std::max(0, static_cast<int>(camera.y / tileSize) - 1);
+    int endX = std::min(mapWidth, static_cast<int>((camera.x + camera.w) / tileSize) + 2);
+    int endY = std::min(mapHeight, static_cast<int>((camera.y + camera.h) / tileSize) + 2);
+
+    for (int y = startY; y < endY; y++) {
+        for (int x = startX; x < endX; x++) {
+            TileType type = tiles[y * mapWidth + x].type;
+            DrawColor color = GetGroundColor(type);
+            float shade = Hash01(x, y, 500) * 12.0f - 6.0f;
+
+            SDL_SetRenderDrawColor(
+                renderer,
+                static_cast<Uint8>(std::clamp(static_cast<int>(color.r + shade), 0, 255)),
+                static_cast<Uint8>(std::clamp(static_cast<int>(color.g + shade), 0, 255)),
+                static_cast<Uint8>(std::clamp(static_cast<int>(color.b + shade), 0, 255)),
+                color.a
+            );
+
+            SDL_FRect rect = SDL_FRect{
+                x * static_cast<float>(tileSize) - camera.x,
+                y * static_cast<float>(tileSize) - camera.y,
+                static_cast<float>(tileSize),
+                static_cast<float>(tileSize)
+            };
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+
+void World::RenderVegetation(SDL_Renderer *renderer) const
+{
+    SDL_FRect playerRect = player.GetHitbox();
+    float playerCenterX = playerRect.x + playerRect.w / 2.0f;
+    float playerCenterY = playerRect.y + playerRect.h / 2.0f;
+
+    for (const VegetationPatch &patch : vegetation) {
+        if (patch.rect.x + patch.rect.w < camera.x || patch.rect.x > camera.x + camera.w ||
+            patch.rect.y + patch.rect.h < camera.y || patch.rect.y > camera.y + camera.h) {
+            continue;
+        }
+
+        float patchCenterX = patch.rect.x + patch.rect.w / 2.0f;
+        float patchCenterY = patch.rect.y + patch.rect.h / 2.0f;
+        float dx = patchCenterX - playerCenterX;
+        float dy = patchCenterY - playerCenterY;
+        float distance = std::sqrt(dx * dx + dy * dy);
+        float influence = std::max(0.0f, 1.0f - distance / 130.0f);
+        float wind = std::sin(worldTime * 2.2f + patch.phase) * 4.0f;
+        float bendX = wind;
+
+        if (distance > 0.001f) {
+            bendX += dx / distance * influence * 24.0f;
+        }
+
+        DrawColor color = patch.type == VegetationType::Rye
+            ? DrawColor{196, 172, 78, 230}
+            : DrawColor{83, 171, 75, 220};
+        int bladeCount = patch.type == VegetationType::Rye ? 7 : 6;
+
+        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+        for (int i = 0; i < bladeCount; i++) {
+            float t = bladeCount <= 1 ? 0.0f : static_cast<float>(i) / static_cast<float>(bladeCount - 1);
+            float baseX = patch.rect.x + t * patch.rect.w;
+            float baseY = patch.rect.y + patch.rect.h;
+            float bladeHeight = patch.rect.h * (0.75f + Hash01(static_cast<int>(patch.rect.x), i, 700) * 0.35f);
+            float tipX = baseX + bendX * (0.45f + t * 0.35f);
+            float tipY = baseY - bladeHeight;
+
+            SDL_RenderLine(
+                renderer,
+                baseX - camera.x,
+                baseY - camera.y,
+                tipX - camera.x,
+                tipY - camera.y
+            );
+        }
+    }
 }
 
 bool World::IsPlayerDead() const

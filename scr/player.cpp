@@ -126,7 +126,6 @@ void Player::Render(SDL_Renderer *renderer, const SDL_FRect &camera) const
     drawRect.x -= camera.x;
     drawRect.y -= camera.y;
 
-    SDL_RenderFillRect(renderer, &drawRect);
     SDL_FlipMode flip = lookLeft ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
     SDL_RenderTextureRotated(renderer, texture, spriteAnimation.GetSourceRect(), &drawRect, 0.0, NULL, flip);
 }
