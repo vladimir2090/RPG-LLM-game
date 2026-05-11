@@ -20,6 +20,7 @@ public:
     float GetHealthPercent() const;
     int GetDamage() const;
     bool IsAttacking() const;
+    bool IsDying() const;
     bool IsDead() const;
     void TakeDamage(int damage);
 
@@ -35,6 +36,8 @@ private:
     bool isWalk;
     bool isAttacking;
     bool attackWasPressed;
+    bool isDying;
+    bool isDead;
     bool lookLeft;
     int maxHealth;
     int health;

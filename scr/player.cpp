@@ -13,6 +13,8 @@ Player::Player()
     isWalk = false;
     isAttacking = false;
     attackWasPressed = false;
+    isDying = false;
+    isDead = false;
     damage = 20;
     lookLeft = false;
     rect = SDL_FRect{100, 100, sizeSprite, sizeSprite};
@@ -30,6 +32,7 @@ void Player::initAnimations(){
     animations.idle = {2, 800, 0};
     animations.walk = {16, 94, 1}; //я протестировал сам скороть под 94 взависимости от скорости 600
     animations.atack = {4, 90, 5}; //атака
+    animations.death = {4, 90, 4}; 
 }
 
 bool Player::Load(SDL_Renderer *renderer, const char *texturePath)
@@ -52,6 +55,18 @@ void Player::Unload()
 
 void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight, bool attack)
 {
+    if (isDead) {
+        return;
+    }
+
+    if (isDying) {
+        bool deathFinished = spriteAnimation.Play(animations.death, false);
+        if (deathFinished) {
+            isDead = true;
+        }
+        return;
+    }
+
     float step = speed * deltaTime;
     isWalk = moveUp ||  moveRight || moveDown || moveLeft;
 
@@ -89,8 +104,11 @@ void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, 
 
     attackWasPressed = attack;
 
-    if (health <= 0) {
-        health = 0;
+    if (health < 0 && !isDying) {
+        isDying = true;
+        isAttacking = false;
+        isWalk = false;
+        spriteAnimation.Restart();
     }
 }
 
@@ -151,15 +169,31 @@ int Player::GetDamage() const
 
 bool Player::IsAttacking() const
 {
-    return isAttacking;
+    return isAttacking && !isDying && !isDead;
+}
+
+bool Player::IsDying() const
+{
+    return isDying;
 }
 
 bool Player::IsDead() const
 {
-    return health < 0; //я добавил последнее дыхание
+    return isDead;
 }
 
 void Player::TakeDamage(int incomingDamage)
 {
-    health = std::max(0, health - incomingDamage);
+    if (isDying || isDead) {
+        return;
+    }
+
+    health -= incomingDamage;
+
+    if (health < 0) {
+        isDying = true;
+        isAttacking = false;
+        isWalk = false;
+        spriteAnimation.Restart();
+    }
 }

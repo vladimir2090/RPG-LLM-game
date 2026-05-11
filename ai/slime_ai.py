@@ -41,14 +41,6 @@ def normalize_direction(move):
 
 
 def choose_slime_move(net, state):
-    dx = state[0]
-    dy = state[1]
-    player_power = state[3]
-    slime_health = state[4]
-
-    if player_power > 0.8 or slime_health < 0.25:
-        return normalize_direction(torch.tensor([-dx, -dy]))
-
     with torch.no_grad():
         move = net(state)
 

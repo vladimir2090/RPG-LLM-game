@@ -296,25 +296,10 @@ SDL_FPoint Slime::PredictMove(const SDL_FRect &playerRect, float playerPower) co
     float playerCenterX = playerRect.x + playerRect.w / 2;
     float playerCenterY = playerRect.y + playerRect.h / 2;
 
-    float rawDx = playerCenterX - slimeCenterX;
-    float rawDy = playerCenterY - slimeCenterY;
-    float rawDistance = std::sqrt(rawDx * rawDx + rawDy * rawDy);
-    float dx = rawDx / 1000.0f;
-    float dy = rawDy / 1000.0f;
-    float distance = std::min(rawDistance / 1000.0f, 1.0f);
+    float dx = (playerCenterX - slimeCenterX) / 1000.0f;
+    float dy = (playerCenterY - slimeCenterY) / 1000.0f;
+    float distance = std::min(std::sqrt(dx * dx + dy * dy), 1.0f);
     float slimeHealth = static_cast<float>(health) / static_cast<float>(maxHealth);
-
-    if (playerPower > 0.8f || slimeHealth < 0.25f) {
-        return NormalizeMove(-dx, -dy);
-    }
-
-    if (rawDistance < 8.0f) {
-        return SDL_FPoint{0.0f, 0.0f};
-    }
-
-    if (distance < 0.25f) {
-        return NormalizeMove(dx, dy);
-    }
 
     float input[5] = {dx, dy, distance, playerPower, slimeHealth};
     float hidden[8];

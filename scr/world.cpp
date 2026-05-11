@@ -66,7 +66,7 @@ void World::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, b
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
 
     for (Slime &slime : slimes) {
-        if (!slime.IsDead()) {
+        if (!slime.IsDead() && !player.IsDying()) {
             slime.Update(deltaTime, player.GetHitbox(), player.GetHealthPercent());
         }
     }
@@ -88,7 +88,7 @@ void World::UpdateCombat(float deltaTime)
         slimeContactDamageCooldown -= deltaTime;
     }
 
-    if (player.IsDead()) {
+    if (player.IsDead() || player.IsDying()) {
         return;
     }
 
