@@ -72,6 +72,7 @@ private:
     void UpdateCamera();
     void UpdateCombat(float deltaTime);
     void UpdateChestsAndPickups();
+    bool IsRectTouchingWater(const SDL_FRect &rect) const;
     void RenderGround(SDL_Renderer *renderer) const;
     void RenderChestsAndPickups(SDL_Renderer *renderer) const;
     void RenderVegetation(SDL_Renderer *renderer) const;

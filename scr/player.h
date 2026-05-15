@@ -12,7 +12,7 @@ public:
     bool Load(SDL_Renderer *renderer, const char *texturePath);
     void Unload();
     void Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight, bool attack);
-    void Render(SDL_Renderer *renderer, const SDL_FRect &camera) const;
+    void Render(SDL_Renderer *renderer, const SDL_FRect &camera, bool waterTint = false) const;
     SDL_FRect GetRect() const;
     SDL_FRect GetHitbox() const;
     SDL_FRect GetAttackRect() const;

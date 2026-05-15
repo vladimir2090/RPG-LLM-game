@@ -10,6 +10,8 @@ const float slimeSpawnDelay = 1.4f;
 const int mapWidth = 800;
 const int mapHeight = 500;
 const int tileSize = 64;
+const int mapOriginTileX = -mapWidth / 2;
+const int mapOriginTileY = -mapHeight / 2;
 const int chunkSizeTiles = 16;
 const int activeChunkRadius = 2;
 const int desiredNearbySlimes = 28;
@@ -37,6 +39,34 @@ static float Hash01(int x, int y, int seed)
     value = (value ^ (value >> 13)) * 1274126177u;
     value ^= value >> 16;
     return static_cast<float>(value & 0x00FFFFFFu) / static_cast<float>(0x01000000u);
+}
+
+static int FloorDiv(int value, int divisor)
+{
+    if (value >= 0) {
+        return value / divisor;
+    }
+
+    return -((-value + divisor - 1) / divisor);
+}
+
+static int WorldToTile(float value)
+{
+    return static_cast<int>(std::floor(value / static_cast<float>(tileSize)));
+}
+
+static bool IsTileInMap(int tileX, int tileY)
+{
+    int localX = tileX - mapOriginTileX;
+    int localY = tileY - mapOriginTileY;
+    return localX >= 0 && localX < mapWidth && localY >= 0 && localY < mapHeight;
+}
+
+static int TileIndex(int tileX, int tileY)
+{
+    int localX = tileX - mapOriginTileX;
+    int localY = tileY - mapOriginTileY;
+    return localY * mapWidth + localX;
 }
 
 static DrawColor GetGroundColor(TileType type)
@@ -108,10 +138,12 @@ void World::GenerateGround()
 
     for (int y = 0; y < mapHeight; y++) {
         for (int x = 0; x < mapWidth; x++) {
-            float cluster = Hash01(x / 4, y / 4, 11);
-            float detail = Hash01(x, y, 23);
-            float riverCenter = mapHeight * 0.48f + std::sin(x * 0.055f) * 24.0f + std::sin(x * 0.013f + 2.0f) * 58.0f;
-            float riverDistance = std::abs(static_cast<float>(y) - riverCenter);
+            int tileX = mapOriginTileX + x;
+            int tileY = mapOriginTileY + y;
+            float cluster = Hash01(FloorDiv(tileX, 4), FloorDiv(tileY, 4), 11);
+            float detail = Hash01(tileX, tileY, 23);
+            float riverCenter = std::sin(tileX * 0.055f) * 24.0f + std::sin(tileX * 0.013f + 2.0f) * 58.0f;
+            float riverDistance = std::abs(static_cast<float>(tileY) - riverCenter);
             TileType type = TileType::Grass;
 
             if (riverDistance < 2.4f) {
@@ -145,7 +177,9 @@ void World::GenerateVegetation()
                 continue;
             }
 
-            float chance = Hash01(x, y, 41);
+            int tileX = mapOriginTileX + x;
+            int tileY = mapOriginTileY + y;
+            float chance = Hash01(tileX, tileY, 41);
             int patchCount = 0;
             VegetationType type = VegetationType::TallGrass;
 
@@ -164,20 +198,20 @@ void World::GenerateVegetation()
             }
 
             for (int i = 0; i < patchCount; i++) {
-                float offsetX = Hash01(x, y, 100 + i) * 42.0f + 8.0f;
-                float offsetY = Hash01(x, y, 200 + i) * 42.0f + 10.0f;
+                float offsetX = Hash01(tileX, tileY, 100 + i) * 42.0f + 8.0f;
+                float offsetY = Hash01(tileX, tileY, 200 + i) * 42.0f + 10.0f;
                 float width = type == VegetationType::Rye ? 34.0f : 28.0f;
                 float height = type == VegetationType::Rye ? 50.0f : 34.0f;
 
                 vegetation.push_back(VegetationPatch{
                     type,
                     SDL_FRect{
-                        x * static_cast<float>(tileSize) + offsetX,
-                        y * static_cast<float>(tileSize) + offsetY,
+                        tileX * static_cast<float>(tileSize) + offsetX,
+                        tileY * static_cast<float>(tileSize) + offsetY,
                         width,
                         height
                     },
-                    Hash01(x, y, 300 + i) * 6.28f
+                    Hash01(tileX, tileY, 300 + i) * 6.28f
                 });
             }
         }
@@ -190,22 +224,24 @@ void World::GenerateChests()
 
     for (int chunkY = 0; chunkY < mapHeight / chunkSizeTiles; chunkY++) {
         for (int chunkX = 0; chunkX < mapWidth / chunkSizeTiles; chunkX++) {
-            if (Hash01(chunkX, chunkY, 900) > 0.16f) {
+            int worldChunkX = FloorDiv(mapOriginTileX, chunkSizeTiles) + chunkX;
+            int worldChunkY = FloorDiv(mapOriginTileY, chunkSizeTiles) + chunkY;
+            if (Hash01(worldChunkX, worldChunkY, 900) > 0.16f) {
                 continue;
             }
 
-            int tileX = chunkX * chunkSizeTiles + 3 + static_cast<int>(Hash01(chunkX, chunkY, 901) * 10.0f);
-            int tileY = chunkY * chunkSizeTiles + 3 + static_cast<int>(Hash01(chunkX, chunkY, 902) * 10.0f);
-            if (tileX < 0 || tileX >= mapWidth || tileY < 0 || tileY >= mapHeight) {
+            int tileX = worldChunkX * chunkSizeTiles + 3 + static_cast<int>(Hash01(worldChunkX, worldChunkY, 901) * 10.0f);
+            int tileY = worldChunkY * chunkSizeTiles + 3 + static_cast<int>(Hash01(worldChunkX, worldChunkY, 902) * 10.0f);
+            if (!IsTileInMap(tileX, tileY)) {
                 continue;
             }
 
-            TileType ground = tiles[tileY * mapWidth + tileX].type;
+            TileType ground = tiles[TileIndex(tileX, tileY)].type;
             if (ground == TileType::Water || ground == TileType::Mud) {
                 continue;
             }
 
-            int damage = 4 + static_cast<int>(Hash01(chunkX, chunkY, 903) * 9.0f);
+            int damage = 4 + static_cast<int>(Hash01(worldChunkX, worldChunkY, 903) * 9.0f);
             chests.push_back(Chest{
                 SDL_FRect{
                     tileX * static_cast<float>(tileSize) + 14.0f,
@@ -241,12 +277,20 @@ void World::SpawnSlimeAt(float x, float y)
         return;
     }
 
-    x = std::clamp(x, 0.0f, mapWidth * static_cast<float>(tileSize) - 160.0f);
-    y = std::clamp(y, 0.0f, mapHeight * static_cast<float>(tileSize) - 160.0f);
+    float minX = mapOriginTileX * static_cast<float>(tileSize);
+    float minY = mapOriginTileY * static_cast<float>(tileSize);
+    float maxX = (mapOriginTileX + mapWidth) * static_cast<float>(tileSize) - 160.0f;
+    float maxY = (mapOriginTileY + mapHeight) * static_cast<float>(tileSize) - 160.0f;
+    x = std::clamp(x, minX, maxX);
+    y = std::clamp(y, minY, maxY);
 
-    int tileX = std::clamp(static_cast<int>(x / tileSize), 0, mapWidth - 1);
-    int tileY = std::clamp(static_cast<int>(y / tileSize), 0, mapHeight - 1);
-    TileType ground = tiles[tileY * mapWidth + tileX].type;
+    int tileX = WorldToTile(x);
+    int tileY = WorldToTile(y);
+    if (!IsTileInMap(tileX, tileY)) {
+        return;
+    }
+
+    TileType ground = tiles[TileIndex(tileX, tileY)].type;
     if (ground == TileType::Water) {
         return;
     }
@@ -271,8 +315,8 @@ int World::CountNearbySlimes() const
     SDL_FRect playerRect = player.GetHitbox();
     float playerCenterX = playerRect.x + playerRect.w / 2.0f;
     float playerCenterY = playerRect.y + playerRect.h / 2.0f;
-    int playerChunkX = static_cast<int>(playerCenterX / (chunkSizeTiles * tileSize));
-    int playerChunkY = static_cast<int>(playerCenterY / (chunkSizeTiles * tileSize));
+    int playerChunkX = FloorDiv(WorldToTile(playerCenterX), chunkSizeTiles);
+    int playerChunkY = FloorDiv(WorldToTile(playerCenterY), chunkSizeTiles);
     int count = 0;
 
     for (const Slime &slime : slimes) {
@@ -283,8 +327,8 @@ int World::CountNearbySlimes() const
         SDL_FRect slimeRect = slime.GetHitbox();
         float slimeCenterX = slimeRect.x + slimeRect.w / 2.0f;
         float slimeCenterY = slimeRect.y + slimeRect.h / 2.0f;
-        int slimeChunkX = static_cast<int>(slimeCenterX / (chunkSizeTiles * tileSize));
-        int slimeChunkY = static_cast<int>(slimeCenterY / (chunkSizeTiles * tileSize));
+        int slimeChunkX = FloorDiv(WorldToTile(slimeCenterX), chunkSizeTiles);
+        int slimeChunkY = FloorDiv(WorldToTile(slimeCenterY), chunkSizeTiles);
 
         if (std::abs(slimeChunkX - playerChunkX) <= activeChunkRadius &&
             std::abs(slimeChunkY - playerChunkY) <= activeChunkRadius) {
@@ -318,8 +362,8 @@ void World::ManageSlimePopulation(float deltaTime)
         return;
     }
 
-    int playerChunkX = static_cast<int>(playerCenterX / (chunkSizeTiles * tileSize));
-    int playerChunkY = static_cast<int>(playerCenterY / (chunkSizeTiles * tileSize));
+    int playerChunkX = FloorDiv(WorldToTile(playerCenterX), chunkSizeTiles);
+    int playerChunkY = FloorDiv(WorldToTile(playerCenterY), chunkSizeTiles);
 
     for (int attempt = 0; attempt < 16; attempt++) {
         float roll = Hash01(static_cast<int>(worldTime * 10.0f), attempt, 1300);
@@ -333,7 +377,7 @@ void World::ManageSlimePopulation(float deltaTime)
         int chunkY = playerChunkY + offsetY;
         int tileX = chunkX * chunkSizeTiles + static_cast<int>(Hash01(chunkX, chunkY, 1302 + attempt) * chunkSizeTiles);
         int tileY = chunkY * chunkSizeTiles + static_cast<int>(Hash01(chunkX, chunkY, 1303 + attempt) * chunkSizeTiles);
-        if (tileX < 0 || tileX >= mapWidth || tileY < 0 || tileY >= mapHeight) {
+        if (!IsTileInMap(tileX, tileY)) {
             continue;
         }
 
@@ -454,7 +498,7 @@ void World::Render(SDL_Renderer *renderer) const
     RenderGround(renderer);
     RenderChestsAndPickups(renderer);
 
-    player.Render(renderer, camera);
+    player.Render(renderer, camera, IsRectTouchingWater(player.GetHitbox()));
 
     for (const Slime &slime : slimes) {
         slime.Render(renderer, camera);
@@ -505,18 +549,52 @@ void World::RenderChestsAndPickups(SDL_Renderer *renderer) const
     }
 }
 
+bool World::IsRectTouchingWater(const SDL_FRect &rect) const
+{
+    int startX = WorldToTile(rect.x);
+    int startY = WorldToTile(rect.y);
+    int endX = WorldToTile(rect.x + rect.w);
+    int endY = WorldToTile(rect.y + rect.h);
+
+    for (int y = startY; y <= endY; y++) {
+        for (int x = startX; x <= endX; x++) {
+            if (IsTileInMap(x, y) && tiles[TileIndex(x, y)].type == TileType::Water) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 void World::RenderGround(SDL_Renderer *renderer) const
 {
-    int startX = std::max(0, static_cast<int>(camera.x / tileSize) - 1);
-    int startY = std::max(0, static_cast<int>(camera.y / tileSize) - 1);
-    int endX = std::min(mapWidth, static_cast<int>((camera.x + camera.w) / tileSize) + 2);
-    int endY = std::min(mapHeight, static_cast<int>((camera.y + camera.h) / tileSize) + 2);
+    int startX = WorldToTile(camera.x) - 1;
+    int startY = WorldToTile(camera.y) - 1;
+    int endX = WorldToTile(camera.x + camera.w) + 2;
+    int endY = WorldToTile(camera.y + camera.h) + 2;
 
     for (int y = startY; y < endY; y++) {
         for (int x = startX; x < endX; x++) {
-            TileType type = tiles[y * mapWidth + x].type;
+            if (!IsTileInMap(x, y)) {
+                SDL_SetRenderDrawColor(renderer, 13, 44, 31, 255);
+                SDL_FRect voidRect = SDL_FRect{
+                    x * static_cast<float>(tileSize) - camera.x,
+                    y * static_cast<float>(tileSize) - camera.y,
+                    static_cast<float>(tileSize),
+                    static_cast<float>(tileSize)
+                };
+                SDL_RenderFillRect(renderer, &voidRect);
+                continue;
+            }
+
+            TileType type = tiles[TileIndex(x, y)].type;
             DrawColor color = GetGroundColor(type);
             float shade = Hash01(x, y, 500) * 12.0f - 6.0f;
+
+            if (type == TileType::Water) {
+                shade += std::sin(worldTime * 3.0f + x * 0.7f + y * 0.3f) * 10.0f;
+            }
 
             SDL_SetRenderDrawColor(
                 renderer,

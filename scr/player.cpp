@@ -120,14 +120,21 @@ void Player::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, 
     }
 }
 
-void Player::Render(SDL_Renderer *renderer, const SDL_FRect &camera) const
+void Player::Render(SDL_Renderer *renderer, const SDL_FRect &camera, bool waterTint) const
 {
     SDL_FRect drawRect = rect;
     drawRect.x -= camera.x;
     drawRect.y -= camera.y;
 
+    if (waterTint) {
+        SDL_SetTextureColorMod(texture, 120, 170, 255);
+    } else {
+        SDL_SetTextureColorMod(texture, 255, 255, 255);
+    }
+
     SDL_FlipMode flip = lookLeft ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
     SDL_RenderTextureRotated(renderer, texture, spriteAnimation.GetSourceRect(), &drawRect, 0.0, NULL, flip);
+    SDL_SetTextureColorMod(texture, 255, 255, 255);
 }
 
 SDL_FRect Player::GetRect() const
