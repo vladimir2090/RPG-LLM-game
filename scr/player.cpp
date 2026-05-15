@@ -174,6 +174,11 @@ int Player::GetDamage() const
     return damage;
 }
 
+void Player::AddDamage(int bonusDamage)
+{
+    damage += bonusDamage;
+}
+
 bool Player::IsAttacking() const
 {
     return isAttacking && !isDying && !isDead;

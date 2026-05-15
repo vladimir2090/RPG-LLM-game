@@ -19,6 +19,7 @@ public:
     int *GetHealthPointer();
     float GetHealthPercent() const;
     int GetDamage() const;
+    void AddDamage(int bonusDamage);
     bool IsAttacking() const;
     bool IsDying() const;
     bool IsDead() const;
