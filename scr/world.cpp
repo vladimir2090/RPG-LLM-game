@@ -22,6 +22,7 @@ const float despawnDistance = 3400.0f;
 const char *playerTexturePath = "/home/vladimir/dev/game/assets/sprites/knight.png";
 const char *slimeTexturePath = "/home/vladimir/dev/game/assets/sprites/slime_green.png";
 const char *slimeBrainPath = "/home/vladimir/dev/game/ai/models/slime_weights.json";
+const char *questsPath = "/home/vladimir/dev/game/assets/quests/quests.json";
 
 struct DrawColor
 {
@@ -113,8 +114,13 @@ bool World::Load(SDL_Renderer *rendererToUse)
     GenerateGround();
     GenerateVegetation();
     GenerateChests();
+    if (!questLog.LoadFromJson(questsPath)) {
+        SDL_Log("Quests were not loaded from %s", questsPath);
+    }
+    GenerateQuestSigns();
     GenerateInitialSlimes();
     hud.Load(player.GetHealthPointer(), sizeHUD);
+    hud.SetQuestLog(&questLog);
     return true;
 }
 
@@ -129,6 +135,7 @@ void World::Unload()
     vegetation.clear();
     chests.clear();
     weaponPickups.clear();
+    questSigns.clear();
 }
 
 void World::GenerateGround()
@@ -251,6 +258,60 @@ void World::GenerateChests()
                 },
                 false,
                 damage
+            });
+        }
+    }
+}
+
+void World::GenerateQuestSigns()
+{
+    questSigns.clear();
+
+    if (questLog.GetQuestTemplateCount() <= 0) {
+        return;
+    }
+
+    for (const QuestSignData &signData : questLog.GetSignsFromJson()) {
+        if (!questLog.HasQuestTemplate(signData.questId)) {
+            continue;
+        }
+
+        questSigns.push_back(QuestSign{
+            SDL_FRect{signData.x, signData.y, 48.0f, 58.0f},
+            signData.questId
+        });
+    }
+
+    for (int chunkY = 0; chunkY < mapHeight / chunkSizeTiles; chunkY++) {
+        for (int chunkX = 0; chunkX < mapWidth / chunkSizeTiles; chunkX++) {
+            int worldChunkX = FloorDiv(mapOriginTileX, chunkSizeTiles) + chunkX;
+            int worldChunkY = FloorDiv(mapOriginTileY, chunkSizeTiles) + chunkY;
+            if (Hash01(worldChunkX, worldChunkY, 1700) > 0.055f) {
+                continue;
+            }
+
+            int tileX = worldChunkX * chunkSizeTiles + 2 + static_cast<int>(Hash01(worldChunkX, worldChunkY, 1701) * 12.0f);
+            int tileY = worldChunkY * chunkSizeTiles + 2 + static_cast<int>(Hash01(worldChunkX, worldChunkY, 1702) * 12.0f);
+            if (!IsTileInMap(tileX, tileY)) {
+                continue;
+            }
+
+            TileType ground = tiles[TileIndex(tileX, tileY)].type;
+            if (ground == TileType::Water || ground == TileType::Mud) {
+                continue;
+            }
+
+            int questIndex = static_cast<int>(Hash01(worldChunkX, worldChunkY, 1703) * questLog.GetQuestTemplateCount());
+            questIndex = std::clamp(questIndex, 0, questLog.GetQuestTemplateCount() - 1);
+
+            questSigns.push_back(QuestSign{
+                SDL_FRect{
+                    tileX * static_cast<float>(tileSize) + 8.0f,
+                    tileY * static_cast<float>(tileSize) + 4.0f,
+                    48.0f,
+                    58.0f
+                },
+                questLog.GetQuestTemplateId(questIndex)
             });
         }
     }
@@ -401,6 +462,7 @@ void World::ManageSlimePopulation(float deltaTime)
 void World::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, bool moveRight, bool attack)
 {
     worldTime += deltaTime;
+    questLog.Update(deltaTime);
     player.Update(deltaTime, moveUp, moveDown, moveLeft, moveRight, attack);
     ManageSlimePopulation(deltaTime);
 
@@ -412,6 +474,7 @@ void World::Update(float deltaTime, bool moveUp, bool moveDown, bool moveLeft, b
 
     UpdateCombat(deltaTime);
     UpdateChestsAndPickups();
+    UpdateQuestSigns();
     UpdateCamera();
 }
 
@@ -449,7 +512,11 @@ void World::UpdateCombat(float deltaTime)
         }
 
         if (player.IsAttacking() && !playerAttackHitDone && SDL_HasRectIntersectionFloat(&attackRect, &slimeRect)) {
+            bool wasAlive = !slime.IsDead();
             slime.TakeDamage(player.GetDamage());
+            if (wasAlive && slime.IsDead()) {
+                questLog.OnSlimeKilled();
+            }
             attackHitSomething = true;
         }
     }
@@ -472,6 +539,7 @@ void World::UpdateChestsAndPickups()
 
         if (SDL_HasRectIntersectionFloat(&playerRect, &chest.rect)) {
             chest.opened = true;
+            questLog.OnChestOpened();
             weaponPickups.push_back(WeaponPickup{
                 SDL_FRect{chest.rect.x + 6.0f, chest.rect.y - 24.0f, 24.0f, 24.0f},
                 chest.weaponDamage,
@@ -493,9 +561,28 @@ void World::UpdateChestsAndPickups()
     }
 }
 
+void World::UpdateQuestSigns()
+{
+    if (!questLog.CanStartQuest()) {
+        return;
+    }
+
+    SDL_FRect playerRect = player.GetHitbox();
+
+    for (const QuestSign &sign : questSigns) {
+        if (SDL_HasRectIntersectionFloat(&playerRect, &sign.rect)) {
+            if (questLog.StartQuest(sign.questId)) {
+                SDL_Log("Quest started: %s", sign.questId.c_str());
+            }
+            return;
+        }
+    }
+}
+
 void World::Render(SDL_Renderer *renderer) const
 {
     RenderGround(renderer);
+    RenderQuestSigns(renderer);
     RenderChestsAndPickups(renderer);
 
     player.Render(renderer, camera, IsRectTouchingWater(player.GetHitbox()));
@@ -546,6 +633,44 @@ void World::RenderChestsAndPickups(SDL_Renderer *renderer) const
         SDL_RenderFillRect(renderer, &drawRect);
         SDL_SetRenderDrawColor(renderer, 65, 70, 85, 255);
         SDL_RenderLine(renderer, drawRect.x + 4.0f, drawRect.y + 20.0f, drawRect.x + 20.0f, drawRect.y + 4.0f);
+    }
+}
+
+void World::RenderQuestSigns(SDL_Renderer *renderer) const
+{
+    for (const QuestSign &sign : questSigns) {
+        if (sign.rect.x + sign.rect.w < camera.x || sign.rect.x > camera.x + camera.w ||
+            sign.rect.y + sign.rect.h < camera.y || sign.rect.y > camera.y + camera.h) {
+            continue;
+        }
+
+        SDL_FRect post = SDL_FRect{
+            sign.rect.x + 20.0f - camera.x,
+            sign.rect.y + 24.0f - camera.y,
+            8.0f,
+            34.0f
+        };
+        SDL_FRect board = SDL_FRect{
+            sign.rect.x - camera.x,
+            sign.rect.y - camera.y,
+            sign.rect.w,
+            28.0f
+        };
+        SDL_FRect paper = SDL_FRect{
+            board.x + 10.0f,
+            board.y + 6.0f,
+            board.w - 20.0f,
+            16.0f
+        };
+
+        SDL_SetRenderDrawColor(renderer, 86, 55, 30, 255);
+        SDL_RenderFillRect(renderer, &post);
+        SDL_SetRenderDrawColor(renderer, 126, 82, 42, 255);
+        SDL_RenderFillRect(renderer, &board);
+        SDL_SetRenderDrawColor(renderer, 62, 39, 23, 255);
+        SDL_RenderRect(renderer, &board);
+        SDL_SetRenderDrawColor(renderer, 220, 196, 132, 255);
+        SDL_RenderFillRect(renderer, &paper);
     }
 }
 

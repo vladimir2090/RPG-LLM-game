@@ -1,0 +1,36 @@
+{
+  "quests": [
+    {
+      "id": "open_chests_3",
+      "title": "Old sign",
+      "complete_title": "Quest complete",
+      "objective": "Open chests",
+      "hint": "Search old chests.",
+      "complete_hint": "Good loot run.",
+      "type": "open_chests",
+      "required": 3
+    },
+    {
+      "id": "kill_slimes_3",
+      "title": "Slime trouble",
+      "complete_title": "Slimes cleared",
+      "objective": "Kill slimes",
+      "hint": "Thin out the pack.",
+      "complete_hint": "The grass is quieter.",
+      "type": "kill_slimes",
+      "required": 3
+    }
+  ],
+  "signs": [
+    {
+      "quest_id": "open_chests_3",
+      "x": 220,
+      "y": 80
+    },
+    {
+      "quest_id": "kill_slimes_3",
+      "x": 420,
+      "y": -120
+    }
+  ]
+}

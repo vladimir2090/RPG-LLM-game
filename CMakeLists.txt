@@ -21,6 +21,7 @@ add_executable(game
     scr/HUD.cpp
     scr/animation.cpp
     scr/player.cpp
+    scr/quest.cpp
     scr/slime.cpp
     scr/world.cpp
 )
