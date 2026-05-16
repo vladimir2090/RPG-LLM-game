@@ -26,6 +26,7 @@ void Animation::Restart()
 bool Animation::Play(const AnimationClip &clip, bool loop)
 {
     Uint64 now = SDL_GetTicks();
+    justFinished = false;
 
     if (currentAnimationY != clip.y) {
         currentAnimationY = clip.y;
@@ -36,7 +37,9 @@ bool Animation::Play(const AnimationClip &clip, bool loop)
         return false;
     }
 
-    if (now - lastUpdate < static_cast<Uint64>(clip.animationDelay)) {return false;}
+    if (now - lastUpdate < static_cast<Uint64>(clip.animationDelay)) {
+        return false;
+    }
 
     lastUpdate = now;
     currentIndex++;
@@ -46,9 +49,9 @@ bool Animation::Play(const AnimationClip &clip, bool loop)
             currentIndex = clip.frames - 1;
             srcRect.x = currentIndex * sizeSprite;
             srcRect.y = clip.y * sizeSprite;
+            justFinished = true;
             return true;
         }
-
         currentIndex = 0;
     }
 

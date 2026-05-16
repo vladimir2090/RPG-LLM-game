@@ -4,7 +4,6 @@
 
 Player::Player()
 {   
-    //надо дслеать красиво
     initAnimations();
 
     texture = NULL;

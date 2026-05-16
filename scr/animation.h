@@ -26,12 +26,14 @@ public:
     Animation();
 
     void SetSpriteSize(float spriteSize);
+    bool WasJustFinished() const { return justFinished; }
     void Restart();
     bool Play(const AnimationClip &clip, bool loop);
     const SDL_FRect *GetSourceRect() const;
 
 private:
     SDL_FRect srcRect;
+    bool justFinished{false};
     float sizeSprite;
     int currentIndex;
     Uint64 lastUpdate;

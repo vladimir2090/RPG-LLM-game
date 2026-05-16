@@ -1,5 +1,5 @@
 #include "world.h"
-
+#include <SDL3_image/SDL_image.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -224,41 +224,35 @@ void World::GenerateVegetation()
         }
     }
 }
-
 void World::GenerateChests()
 {
     chests.clear();
+    const char* chestTexturePath = "/home/vladimir/dev/game/assets/sprites/chest.png";
 
     for (int chunkY = 0; chunkY < mapHeight / chunkSizeTiles; chunkY++) {
         for (int chunkX = 0; chunkX < mapWidth / chunkSizeTiles; chunkX++) {
             int worldChunkX = FloorDiv(mapOriginTileX, chunkSizeTiles) + chunkX;
             int worldChunkY = FloorDiv(mapOriginTileY, chunkSizeTiles) + chunkY;
-            if (Hash01(worldChunkX, worldChunkY, 900) > 0.16f) {
-                continue;
-            }
+            
+            if (Hash01(worldChunkX, worldChunkY, 900) > 0.16f) continue;
 
             int tileX = worldChunkX * chunkSizeTiles + 3 + static_cast<int>(Hash01(worldChunkX, worldChunkY, 901) * 10.0f);
             int tileY = worldChunkY * chunkSizeTiles + 3 + static_cast<int>(Hash01(worldChunkX, worldChunkY, 902) * 10.0f);
-            if (!IsTileInMap(tileX, tileY)) {
-                continue;
-            }
+            
+            if (!IsTileInMap(tileX, tileY)) continue;
 
             TileType ground = tiles[TileIndex(tileX, tileY)].type;
-            if (ground == TileType::Water || ground == TileType::Mud) {
-                continue;
-            }
+            if (ground == TileType::Water || ground == TileType::Mud) continue;
 
             int damage = 4 + static_cast<int>(Hash01(worldChunkX, worldChunkY, 903) * 9.0f);
-            chests.push_back(Chest{
-                SDL_FRect{
-                    tileX * static_cast<float>(tileSize) + 14.0f,
-                    tileY * static_cast<float>(tileSize) + 18.0f,
-                    36.0f,
-                    30.0f
-                },
-                false,
-                damage
-            });
+
+            Chest chest;
+            chest.SetTilePosition(tileX, tileY, tileSize);
+            chest.SetWeaponDamage(damage);
+            
+            if (chest.Load(renderer, chestTexturePath)) {
+                chests.push_back(std::move(chest));
+            }
         }
     }
 }
@@ -533,26 +527,19 @@ void World::UpdateChestsAndPickups()
     SDL_FRect playerRect = player.GetHitbox();
 
     for (Chest &chest : chests) {
-        if (chest.opened) {
-            continue;
-        }
-
-        if (SDL_HasRectIntersectionFloat(&playerRect, &chest.rect)) {
-            chest.opened = true;
+        int damageBonus = chest.Update(playerRect);
+        if (damageBonus > 0) {
             questLog.OnChestOpened();
             weaponPickups.push_back(WeaponPickup{
-                SDL_FRect{chest.rect.x + 6.0f, chest.rect.y - 24.0f, 24.0f, 24.0f},
-                chest.weaponDamage,
+                SDL_FRect{chest.GetRect().x + 6.0f, chest.GetRect().y - 24.0f, 24.0f, 24.0f},
+                damageBonus,
                 false
             });
         }
     }
 
     for (WeaponPickup &pickup : weaponPickups) {
-        if (pickup.taken) {
-            continue;
-        }
-
+        if (pickup.taken) continue;
         if (SDL_HasRectIntersectionFloat(&playerRect, &pickup.rect)) {
             player.AddDamage(pickup.damageBonus);
             pickup.taken = true;
@@ -598,26 +585,10 @@ void World::Render(SDL_Renderer *renderer) const
 void World::RenderChestsAndPickups(SDL_Renderer *renderer) const
 {
     for (const Chest &chest : chests) {
-        if (chest.rect.x + chest.rect.w < camera.x || chest.rect.x > camera.x + camera.w ||
-            chest.rect.y + chest.rect.h < camera.y || chest.rect.y > camera.y + camera.h) {
-            continue;
-        }
-
-        SDL_FRect drawRect = chest.rect;
-        drawRect.x -= camera.x;
-        drawRect.y -= camera.y;
-
-        if (chest.opened) {
-            SDL_SetRenderDrawColor(renderer, 90, 57, 32, 255);
-        } else {
-            SDL_SetRenderDrawColor(renderer, 139, 88, 42, 255);
-        }
-        SDL_RenderFillRect(renderer, &drawRect);
-
-        SDL_SetRenderDrawColor(renderer, 68, 42, 24, 255);
-        SDL_RenderRect(renderer, &drawRect);
+        chest.Render(renderer, camera);
     }
 
+    // Рендер WeaponPickup оставляем как есть (или тоже вынесем в отдельный класс)
     for (const WeaponPickup &pickup : weaponPickups) {
         if (pickup.taken ||
             pickup.rect.x + pickup.rect.w < camera.x || pickup.rect.x > camera.x + camera.w ||

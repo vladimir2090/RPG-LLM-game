@@ -23,6 +23,7 @@ add_executable(game
     scr/player.cpp
     scr/quest.cpp
     scr/slime.cpp
+    scr/chest.cpp
     scr/world.cpp
 )
 

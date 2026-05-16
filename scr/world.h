@@ -4,6 +4,7 @@
 #include "player.h"
 #include "quest.h"
 #include "slime.h"
+#include "chest.h"
 
 #include <SDL3/SDL.h>
 #include <string>
@@ -36,13 +37,6 @@ struct VegetationPatch
     VegetationType type;
     SDL_FRect rect;
     float phase;
-};
-
-struct Chest
-{
-    SDL_FRect rect;
-    bool opened;
-    int weaponDamage;
 };
 
 struct WeaponPickup
@@ -87,13 +81,13 @@ private:
     void RenderChestsAndPickups(SDL_Renderer *renderer) const;
     void RenderQuestSigns(SDL_Renderer *renderer) const;
     void RenderVegetation(SDL_Renderer *renderer) const;
-
+    SDL_Texture *texture_chest;
     SDL_Renderer *renderer;
     Player player;
     std::vector<Slime> slimes;
+    std::vector<Chest> chests;
     std::vector<Tile> tiles;
     std::vector<VegetationPatch> vegetation;
-    std::vector<Chest> chests;
     std::vector<WeaponPickup> weaponPickups;
     std::vector<QuestSign> questSigns;
     QuestLog questLog;
